@@ -87,7 +87,7 @@ Generate a detailed profile report in this exact JSON format (valid JSON only, n
     console.log('📤 Calling Claude API with prompt:', claudePrompt.substring(0, 100));
 
     const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 10000); // 10 second timeout
+    const timeout = setTimeout(() => controller.abort(), 25000); // 25 second timeout (Netlify limit is 26s)
 
     try {
       console.log('🌐 Fetching from: https://api.anthropic.com/v1/messages');
