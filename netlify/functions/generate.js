@@ -138,24 +138,40 @@ Generate a detailed profile report in this exact JSON format (valid JSON only, n
     let report;
     try {
       report = JSON.parse(reportText);
+      console.log('✅ Direct JSON parse successful');
     } catch (parseError) {
-      console.error('First parse attempt failed, trying to extract JSON...');
-      // Try to extract JSON from markdown code blocks
-      let jsonMatch = reportText.match(/```json\s*([\s\S]*?)\s*```/);
+      console.error('Direct parse failed, trying to extract JSON...');
+      console.log('Raw response (first 300 chars):', reportText.substring(0, 300));
+
+      // Try multiple regex patterns
+      let jsonMatch;
+
+      // Try: ```json ... ```
+      jsonMatch = reportText.match(/```json\s*([\s\S]*?)\s*```/i);
+      if (jsonMatch) {
+        console.log('Matched ```json pattern');
+      }
+
+      // Try: ``` ... ```
       if (!jsonMatch) {
         jsonMatch = reportText.match(/```\s*([\s\S]*?)\s*```/);
+        if (jsonMatch) console.log('Matched ``` pattern');
       }
+
+      // Try: { ... } (greedy)
       if (!jsonMatch) {
         jsonMatch = reportText.match(/\{[\s\S]*\}/);
+        if (jsonMatch) console.log('Matched { } pattern');
       }
 
       if (!jsonMatch) {
-        throw new Error(`Failed to find JSON in Claude response: ${reportText.substring(0, 200)}`);
+        throw new Error(`Failed to find JSON in Claude response: ${reportText.substring(0, 300)}`);
       }
 
-      const jsonStr = jsonMatch[1] || jsonMatch[0];
+      const jsonStr = (jsonMatch[1] || jsonMatch[0]).trim();
       console.log('Extracted JSON (first 300 chars):', jsonStr.substring(0, 300));
       report = JSON.parse(jsonStr);
+      console.log('✅ Extracted and parsed JSON successfully');
     }
 
     // Send email to people@topcuvee.com (non-blocking - don't fail if email fails)
