@@ -115,16 +115,37 @@ Generate a detailed profile report in this exact JSON format (valid JSON only, n
     }
 
     const claudeData = await claudeResponse.json();
+    console.log('Claude response data:', claudeData);
+
+    if (!claudeData.content || !claudeData.content[0]) {
+      throw new Error(`Invalid Claude response structure: ${JSON.stringify(claudeData)}`);
+    }
+
     const reportText = claudeData.content[0].text;
+    console.log('Claude report text (first 500 chars):', reportText.substring(0, 500));
 
     // Parse JSON from response (handle potential markdown wrapping)
     let report;
     try {
       report = JSON.parse(reportText);
-    } catch {
-      const jsonMatch = reportText.match(/\{[\s\S]*\}/);
-      if (!jsonMatch) throw new Error('Failed to parse Claude response');
-      report = JSON.parse(jsonMatch[0]);
+    } catch (parseError) {
+      console.error('First parse attempt failed, trying to extract JSON...');
+      // Try to extract JSON from markdown code blocks
+      let jsonMatch = reportText.match(/```json\s*([\s\S]*?)\s*```/);
+      if (!jsonMatch) {
+        jsonMatch = reportText.match(/```\s*([\s\S]*?)\s*```/);
+      }
+      if (!jsonMatch) {
+        jsonMatch = reportText.match(/\{[\s\S]*\}/);
+      }
+
+      if (!jsonMatch) {
+        throw new Error(`Failed to find JSON in Claude response: ${reportText.substring(0, 200)}`);
+      }
+
+      const jsonStr = jsonMatch[1] || jsonMatch[0];
+      console.log('Extracted JSON (first 300 chars):', jsonStr.substring(0, 300));
+      report = JSON.parse(jsonStr);
     }
 
     // Send email to people@topcuvee.com (non-blocking - don't fail if email fails)
