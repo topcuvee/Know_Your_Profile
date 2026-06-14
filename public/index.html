@@ -566,8 +566,15 @@
 
     function showPage(page) {
       const pages = document.querySelectorAll('.page');
-      pages.forEach(p => p.classList.remove('active'));
-      pages[page].classList.add('active');
+      pages.forEach(p => {
+        p.classList.remove('active');
+        p.style.display = 'none';
+      });
+      const targetPage = pages[page];
+      targetPage.classList.add('active');
+      targetPage.style.display = page === 3 ? 'flex' : 'block';
+      window.scrollTo(0, 0);
+      console.log('showPage:', page, 'display:', targetPage.style.display);
     }
 
     function handlePasswordSubmit(e) {
