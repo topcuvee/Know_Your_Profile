@@ -637,8 +637,14 @@
 
     async function handleAssessmentSubmit(e) {
       e.preventDefault();
-      if (responses.some(r => r === null)) return;
+      console.log('handleAssessmentSubmit called');
 
+      if (responses.some(r => r === null)) {
+        console.log('Not all responses filled');
+        return;
+      }
+
+      console.log('Moving to loading page...');
       showPage(2); // Loading page
 
       const name = window.candidateName || 'Candidate';
@@ -695,7 +701,20 @@
     async function fetchWithRetry(url, options, maxRetries = 1) {
       for (let i = 0; i <= maxRetries; i++) {
         try {
-          return await fetch(url, options);
+          const controller = new AbortController();
+          const timeoutId = setTimeout(() => controller.abort(), 30000); // 30s timeout
+
+          try {
+            const response = await fetch(url, { ...options, signal: controller.signal });
+            clearTimeout(timeoutId);
+            return response;
+          } catch (error) {
+            clearTimeout(timeoutId);
+            if (error.name === 'AbortError') {
+              throw new Error('Request timeout after 30 seconds');
+            }
+            throw error;
+          }
         } catch (error) {
           if (i < maxRetries && error.message.includes('RESET')) {
             await new Promise(resolve => setTimeout(resolve, 2000));
