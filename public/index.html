@@ -719,16 +719,16 @@
 
         console.log('✅ Report received:', report);
         displayReport(report);
-        console.log('Switching to report page (page 3)...');
+        console.log('Switching to report page (page 4)...');
         setTimeout(() => {
-          console.log('showPage(3) called');
-          showPage(3);
+          console.log('showPage(4) called');
+          showPage(4);
         }, 100); // Report page with slight delay
       } catch (error) {
         console.error('❌ Assessment error:', error);
         console.error('Full error stack:', error.stack);
         document.getElementById('errorMessage').textContent = `Failed to generate report: ${error.message}. Check browser console for full details.`;
-        showPage(4); // Error page
+        showPage(5); // Error page
       }
     }
 
