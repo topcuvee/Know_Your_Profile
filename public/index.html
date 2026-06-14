@@ -689,7 +689,11 @@
 
         console.log('✅ Report received:', report);
         displayReport(report);
-        showPage(3); // Report page
+        console.log('Switching to report page (page 3)...');
+        setTimeout(() => {
+          console.log('showPage(3) called');
+          showPage(3);
+        }, 100); // Report page with slight delay
       } catch (error) {
         console.error('❌ Assessment error:', error);
         console.error('Full error stack:', error.stack);
@@ -763,7 +767,7 @@
 
       const reportContent = document.getElementById('reportContent');
       reportContent.innerHTML = html;
-      console.log('Report rendered successfully');
+      console.log('Report rendered to DOM');
     }
 
     // Debug: Check if function endpoint is accessible
