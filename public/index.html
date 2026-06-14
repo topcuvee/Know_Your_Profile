@@ -592,6 +592,19 @@
       renderQuestions();
     }
 
+    function fillTestAnswers(profile = 0) {
+      // Fill with all answers from a specific profile (0=Creator, 1=Star, etc)
+      responses = scoringMatrix.map(row => profile < row.length ? row.findIndex(p => p === profile) : 0);
+      updateProgress();
+      document.querySelectorAll('input[type="radio"]').forEach(input => {
+        const qNum = parseInt(input.name.substring(1));
+        if (responses[qNum] === parseInt(input.value)) {
+          input.checked = true;
+        }
+      });
+      console.log('✅ Test answers filled for profile', profileNames[profile]);
+    }
+
     function renderQuestions() {
       const container = document.getElementById('questionsContainer');
       let currentSection = '';
@@ -779,6 +792,15 @@
     fetch('/.netlify/functions/generate', { method: 'OPTIONS' })
       .then(r => console.log('✓ Function endpoint accessible'))
       .catch(e => console.warn('⚠ Function endpoint may not be accessible:', e.message));
+
+    // Test mode: Press number keys to auto-fill (1=Creator, 2=Star, 3=Supporter, etc)
+    document.addEventListener('keydown', (e) => {
+      if (e.key >= '1' && e.key <= '8') {
+        const profileIdx = parseInt(e.key) - 1;
+        fillTestAnswers(profileIdx);
+        console.log('🧪 Test mode: Filled with', profileNames[profileIdx], 'profile');
+      }
+    });
 
     document.getElementById('passwordForm').addEventListener('submit', handlePasswordSubmit);
     document.getElementById('nameForm').addEventListener('submit', handleNameSubmit);
