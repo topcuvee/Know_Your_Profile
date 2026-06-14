@@ -223,6 +223,10 @@
       cursor: pointer;
       transition: all 150ms ease;
       background: var(--color-off-white);
+      margin: 0;
+      font-size: 14px;
+      font-weight: 400;
+      color: var(--fg-2);
     }
 
     .option:hover {
@@ -234,16 +238,7 @@
       margin-right: var(--space-2);
       cursor: pointer;
       accent-color: var(--color-orange);
-    }
-
-    .option label {
-      flex: 1;
-      margin: 0;
-      font-size: 14px;
-      cursor: pointer;
-      text-transform: none;
-      font-weight: 400;
-      color: var(--fg-2);
+      flex-shrink: 0;
     }
 
     .option input[type="radio"]:checked {
@@ -295,8 +290,14 @@
     .report-page {
       background: white;
       border-radius: var(--radius-lg);
-      padding: var(--space-6);
+      padding: 0;
       box-shadow: var(--shadow-md);
+    }
+
+    .report-page .container {
+      background: white;
+      border-radius: var(--radius-lg);
+      padding: var(--space-6);
     }
 
     .report-header {
@@ -605,7 +606,7 @@
               ${q.options.map((opt, i) => `
                 <label class="option">
                   <input type="radio" name="q${idx}" value="${i}" ${responses[idx] === i ? 'checked' : ''}>
-                  <label>${opt}</label>
+                  <span>${opt}</span>
                 </label>
               `).join('')}
             </div>
@@ -644,19 +645,26 @@
       const answers = responses.map((r, i) => scoringMatrix[i][r]);
 
       try {
+        console.log('Submitting answers:', answers);
         const response = await fetchWithRetry('/.netlify/functions/generate', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ answers, name })
         });
 
-        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        if (!response.ok) {
+          const errorText = await response.text();
+          console.error('API error response:', errorText);
+          throw new Error(`HTTP ${response.status}: ${errorText}`);
+        }
 
         const report = await response.json();
+        console.log('Report received:', report);
         displayReport(report);
         showPage(3); // Report page
       } catch (error) {
-        document.getElementById('errorMessage').textContent = `Failed to generate report: ${error.message}`;
+        console.error('Assessment error:', error);
+        document.getElementById('errorMessage').textContent = `Failed to generate report: ${error.message}. Check browser console for details.`;
         showPage(4); // Error page
       }
     }
@@ -674,6 +682,13 @@
     }
 
     function displayReport(report) {
+      console.log('Report data:', report);
+
+      if (!report.primary_profile) {
+        console.error('Missing primary_profile in report');
+        throw new Error('Invalid report format');
+      }
+
       const html = `
         <div class="report-header">
           <div class="profile-name">${report.primary_profile}</div>
@@ -682,29 +697,31 @@
 
         <div class="report-section">
           <div class="report-section-title">Profile Summary</div>
-          <div class="report-content">${report.profile_summary}</div>
+          <div class="report-content">${report.profile_summary || 'Loading...'}</div>
         </div>
 
         <div class="report-section">
           <div class="report-section-title">Frequency Group</div>
-          <div class="report-content">${report.frequency_summary}</div>
+          <div class="report-content">${report.frequency_summary || 'Loading...'}</div>
         </div>
 
         <div class="report-section">
           <div class="report-section-title">Natural Strengths</div>
-          <div class="report-content">${report.natural_strengths}</div>
+          <div class="report-content">${report.natural_strengths || 'Loading...'}</div>
         </div>
 
         <div class="report-section">
           <div class="report-section-title">Flow vs Stress</div>
           <div class="report-content">
-            <strong>In Flow:</strong> ${report.flow_state}<br><br>
-            <strong>Under Stress:</strong> ${report.stress_state}
+            <strong>In Flow:</strong> ${report.flow_state || 'Loading...'}<br><br>
+            <strong>Under Stress:</strong> ${report.stress_state || 'Loading...'}
           </div>
         </div>
       `;
 
-      document.getElementById('reportContent').innerHTML = html;
+      const reportContent = document.getElementById('reportContent');
+      reportContent.innerHTML = html;
+      console.log('Report rendered successfully');
     }
 
     document.getElementById('passwordForm').addEventListener('submit', handlePasswordSubmit);
