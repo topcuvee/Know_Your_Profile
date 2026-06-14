@@ -288,16 +288,21 @@
 
     /* REPORT PAGE */
     .report-page {
-      background: white;
-      border-radius: var(--radius-lg);
-      padding: 0;
-      box-shadow: var(--shadow-md);
+      display: none;
+    }
+
+    .report-page.active {
+      display: flex;
+      background: var(--bg-1);
+      min-height: 100vh;
     }
 
     .report-page .container {
       background: white;
       border-radius: var(--radius-lg);
       padding: var(--space-6);
+      box-shadow: var(--shadow-md);
+      max-width: 800px;
     }
 
     .report-header {
