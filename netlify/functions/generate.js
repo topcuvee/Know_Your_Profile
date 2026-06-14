@@ -53,30 +53,30 @@ export const handler = async (event) => {
     const frequencyGroup = frequencyGroupsMap[primaryIdx];
 
     // Generate report via Claude
-    const claudePrompt = `Generate a profile report in valid JSON format ONLY. No markdown, no explanations.
+    const claudePrompt = `Return ONLY valid JSON, no markdown or extra text.
 
-Primary: ${primaryProfile}, Secondary: ${secondaryProfile}, Frequency: ${frequencyGroup}
+Primary: ${primaryProfile}
+Secondary: ${secondaryProfile}
+Frequency: ${frequencyGroup}
 Scores: Creator:${profiles[0]} Star:${profiles[1]} Supporter:${profiles[2]} Accumulator:${profiles[3]} Deal Maker:${profiles[4]} Lord:${profiles[5]} Trader:${profiles[6]} Mechanic:${profiles[7]}
-Candidate: ${name}
 
-Generate a detailed profile report in this exact JSON format (valid JSON only, no markdown):
 {
   "primary_profile": "${primaryProfile}",
   "secondary_profile": "${secondaryProfile}",
   "frequency_group": "${frequencyGroup}",
   "frequency_profiles": "${frequencyGroup === 'Dynamo' ? 'Creator + Star' : frequencyGroup === 'Blaze' ? 'Deal Maker + Supporter' : frequencyGroup === 'Tempo' ? 'Trader + Accumulator' : 'Lord + Mechanic'}",
-  "profile_summary": "Three sentences describing the ${primaryProfile} archetype with a famous real-world example. Written for a manager, not the candidate. British English.",
-  "frequency_summary": "Three sentences explaining what this frequency group means in practice and the structural gap it implies. British English.",
-  "natural_strengths": "Three sentences on what this person does instinctively well. Direct and specific to the ${primaryProfile} profile. British English.",
-  "blind_spots": "Three sentences on where they likely struggle or create friction. Direct, not softened. British English.",
-  "flow_state": "Two sentences on what puts them in flow—conditions where they do their best work. British English.",
-  "stress_state": "Two sentences on what drains or derails them under pressure and how it manifests. British English.",
-  "management_guide": "Three sentences on how to get the best out of this person—communication style, autonomy, feedback, motivation levers. British English.",
-  "role_fit_strong": "Two sentences on types of roles in wine/hospitality that are a strong fit for a ${primaryProfile}. British English.",
-  "role_fit_draining": "Two sentences on types of roles in wine/hospitality that would be draining or unsuitable. British English.",
-  "hiring_verdict": "One of exactly: 'Strong fit', 'Conditional fit', or 'Not recommended'. Based on the profile scores.",
-  "hiring_rationale": "Three sentences explaining the hiring verdict. Direct and professional. British English.",
-  "scoring_note": "One sentence noting any close scores or patterns in responses. If clear primary, write: 'Clear primary profile with strong secondary influence.'"
+  "profile_summary": "(3 sentences on ${primaryProfile} with a famous example, for managers, British English)",
+  "frequency_summary": "(3 sentences on ${frequencyGroup} frequency group and its gap, British English)",
+  "natural_strengths": "(3 sentences on ${primaryProfile}'s strengths, British English)",
+  "blind_spots": "(3 sentences on ${primaryProfile}'s blind spots, British English)",
+  "flow_state": "(2 sentences on what puts ${primaryProfile} in flow, British English)",
+  "stress_state": "(2 sentences on what stresses ${primaryProfile}, British English)",
+  "management_guide": "(3 sentences on managing ${primaryProfile}, British English)",
+  "role_fit_strong": "(2 sentences on ideal roles for ${primaryProfile} in wine/hospitality, British English)",
+  "role_fit_draining": "(2 sentences on draining roles for ${primaryProfile}, British English)",
+  "hiring_verdict": "Strong fit or Conditional fit or Not recommended",
+  "hiring_rationale": "(3 sentences on hiring verdict for ${primaryProfile}, British English)",
+  "scoring_note": "(1 sentence on profile clarity)"
 }`;
 
     if (!process.env.ANTHROPIC_API_KEY) {
