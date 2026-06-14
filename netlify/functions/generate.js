@@ -143,23 +143,38 @@ Scores: Creator:${profiles[0]} Star:${profiles[1]} Supporter:${profiles[2]} Accu
       console.error('Direct parse failed, trying to extract JSON...');
       console.log('Raw response (first 500 chars):', reportText.substring(0, 500));
 
-      // Strip everything before first { and everything after last }
+      let jsonStr;
+
+      // Try: Strip everything before first { and after last }
       const firstBrace = reportText.indexOf('{');
       const lastBrace = reportText.lastIndexOf('}');
 
-      if (firstBrace === -1 || lastBrace === -1 || lastBrace <= firstBrace) {
-        throw new Error(`No JSON object found in Claude response: ${reportText.substring(0, 300)}`);
+      if (firstBrace !== -1 && lastBrace !== -1 && lastBrace > firstBrace) {
+        jsonStr = reportText.substring(firstBrace, lastBrace + 1).trim();
+        console.log('✅ Found braced JSON');
+      } else {
+        // No braces found - try to extract as raw fields and wrap in braces
+        console.log('No braces found, attempting to extract raw JSON fields...');
+        const stripped = reportText.replace(/^json\s*/i, '').trim();
+
+        // Check if it looks like JSON fields
+        if (stripped.includes('"primary_profile"')) {
+          jsonStr = '{' + stripped.replace(/,\s*$/, '') + '}';
+          console.log('✅ Wrapped raw JSON fields in braces');
+        } else {
+          throw new Error(`No JSON found in Claude response: ${reportText.substring(0, 300)}`);
+        }
       }
 
-      const jsonStr = reportText.substring(firstBrace, lastBrace + 1).trim();
-      console.log('Extracted JSON (first 300 chars):', jsonStr.substring(0, 300));
+      console.log('Attempting to parse JSON (first 300 chars):', jsonStr.substring(0, 300));
 
       try {
         report = JSON.parse(jsonStr);
-        console.log('✅ Successfully parsed extracted JSON');
+        console.log('✅ Successfully parsed JSON');
       } catch (jsonError) {
-        console.error('Failed to parse extracted JSON:', jsonError.message);
-        throw new Error(`Invalid JSON in Claude response: ${jsonError.message}`);
+        console.error('Failed to parse JSON:', jsonError.message);
+        console.error('Attempted JSON string:', jsonStr.substring(0, 500));
+        throw new Error(`Invalid JSON: ${jsonError.message}`);
       }
     }
 
