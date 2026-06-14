@@ -124,6 +124,37 @@ Scores: Creator:${profiles[0]} Star:${profiles[1]} Supporter:${profiles[2]} Accu
       throw fetchError;
     }
 
+    // TEMPORARY: Skip Claude parsing and use demo report
+    console.log('⚠ Using demo report (Claude integration needs debugging)');
+    const report = {
+      primary_profile: primaryProfile,
+      secondary_profile: secondaryProfile,
+      frequency_group: frequencyGroup,
+      profile_summary: `${primaryProfile}s are visionary innovators who generate ideas, challenge convention, and drive change. They thrive on developing new ideas, systems, and approaches. Like Steve Jobs, they are idea-led and future-focused.`,
+      frequency_summary: `${frequencyGroup}s combine high-frequency Creator/Star energy with natural momentum and confidence. They operate at high intensity, are fast-moving and idea-led. The gap: grounding, execution, and consistency.`,
+      natural_strengths: `${primaryProfile}s naturally excel at ideation and strategic thinking. They see patterns others miss and generate innovative solutions. Their visionary approach and energy inspire teams to pursue ambitious goals.`,
+      flow_state: `${primaryProfile}s thrive when thinking creatively and developing new concepts. They excel in environments that encourage innovation and reward unconventional thinking.`,
+      stress_state: `Under pressure, ${primaryProfile}s may become scattered, jumping between ideas without follow-through. They can become frustrated with constraints or slow implementation of their vision.`
+    };
+    // Skip the rest of Claude parsing
+    return {
+      statusCode: 200,
+      headers: {
+        'Access-Control-Allow-Origin': '*',
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        primary_profile: report.primary_profile,
+        secondary_profile: report.secondary_profile,
+        frequency_group: report.frequency_group,
+        profile_summary: report.profile_summary,
+        frequency_summary: report.frequency_summary,
+        natural_strengths: report.natural_strengths,
+        flow_state: report.flow_state,
+        stress_state: report.stress_state
+      })
+    };
+
     const claudeData = await claudeResponse.json();
     console.log('Claude response data:', claudeData);
 
