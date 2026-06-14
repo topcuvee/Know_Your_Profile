@@ -566,15 +566,20 @@
 
     function showPage(page) {
       const pages = document.querySelectorAll('.page');
-      pages.forEach(p => {
-        p.classList.remove('active');
-        p.style.display = 'none';
+      pages.forEach((p, idx) => {
+        if (idx === page) {
+          p.style.display = page === 3 ? 'flex' : 'block';
+          p.style.visibility = 'visible';
+          p.style.opacity = '1';
+          p.classList.add('active');
+        } else {
+          p.style.display = 'none';
+          p.style.visibility = 'hidden';
+          p.classList.remove('active');
+        }
       });
-      const targetPage = pages[page];
-      targetPage.classList.add('active');
-      targetPage.style.display = page === 3 ? 'flex' : 'block';
       window.scrollTo(0, 0);
-      console.log('showPage:', page, 'display:', targetPage.style.display);
+      console.log('showPage:', page);
     }
 
     function handlePasswordSubmit(e) {
