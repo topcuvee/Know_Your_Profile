@@ -141,37 +141,26 @@ Scores: Creator:${profiles[0]} Star:${profiles[1]} Supporter:${profiles[2]} Accu
       console.log('✅ Direct JSON parse successful');
     } catch (parseError) {
       console.error('Direct parse failed, trying to extract JSON...');
-      console.log('Raw response (first 300 chars):', reportText.substring(0, 300));
+      console.log('Raw response (first 500 chars):', reportText.substring(0, 500));
 
-      // Try multiple regex patterns
-      let jsonMatch;
+      // Strip everything before first { and everything after last }
+      const firstBrace = reportText.indexOf('{');
+      const lastBrace = reportText.lastIndexOf('}');
 
-      // Try: ```json ... ```
-      jsonMatch = reportText.match(/```json\s*([\s\S]*?)\s*```/i);
-      if (jsonMatch) {
-        console.log('Matched ```json pattern');
+      if (firstBrace === -1 || lastBrace === -1 || lastBrace <= firstBrace) {
+        throw new Error(`No JSON object found in Claude response: ${reportText.substring(0, 300)}`);
       }
 
-      // Try: ``` ... ```
-      if (!jsonMatch) {
-        jsonMatch = reportText.match(/```\s*([\s\S]*?)\s*```/);
-        if (jsonMatch) console.log('Matched ``` pattern');
-      }
-
-      // Try: { ... } (greedy)
-      if (!jsonMatch) {
-        jsonMatch = reportText.match(/\{[\s\S]*\}/);
-        if (jsonMatch) console.log('Matched { } pattern');
-      }
-
-      if (!jsonMatch) {
-        throw new Error(`Failed to find JSON in Claude response: ${reportText.substring(0, 300)}`);
-      }
-
-      const jsonStr = (jsonMatch[1] || jsonMatch[0]).trim();
+      const jsonStr = reportText.substring(firstBrace, lastBrace + 1).trim();
       console.log('Extracted JSON (first 300 chars):', jsonStr.substring(0, 300));
-      report = JSON.parse(jsonStr);
-      console.log('✅ Extracted and parsed JSON successfully');
+
+      try {
+        report = JSON.parse(jsonStr);
+        console.log('✅ Successfully parsed extracted JSON');
+      } catch (jsonError) {
+        console.error('Failed to parse extracted JSON:', jsonError.message);
+        throw new Error(`Invalid JSON in Claude response: ${jsonError.message}`);
+      }
     }
 
     // Send email to people@topcuvee.com (non-blocking - don't fail if email fails)
