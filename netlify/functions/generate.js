@@ -178,6 +178,23 @@ Scores: Creator:${profiles[0]} Star:${profiles[1]} Supporter:${profiles[2]} Accu
       }
     }
 
+    // Validate report has required fields
+    if (!report.primary_profile || !report.profile_summary) {
+      console.error('❌ Report missing required fields:', Object.keys(report));
+      // Fallback to demo report if parsing failed
+      report = {
+        primary_profile: primaryProfile,
+        secondary_profile: secondaryProfile,
+        frequency_group: frequencyGroup,
+        profile_summary: `${primaryProfile}s are natural ${frequencyGroup} energies who excel in their specific domains. They bring distinctive strengths to any team.`,
+        frequency_summary: `The ${frequencyGroup} frequency combines the natural strengths of both ${report.frequency_profiles || 'profiles'}. This group tends to be focused and effective in their core competencies.`,
+        natural_strengths: `${primaryProfile}s naturally excel at their core functions. They bring focus, dedication, and specific expertise. Their consistency and reliability are assets to any organisation.`,
+        flow_state: `${primaryProfile}s thrive when working within their areas of specialisation. They excel when given clear objectives aligned with their strengths.`,
+        stress_state: `Under pressure, ${primaryProfile}s may become overly focused or rigid. They benefit from support that helps them adapt and see alternative perspectives.`
+      };
+      console.log('⚠ Using fallback report due to parsing failure');
+    }
+
     // Send email to people@topcuvee.com (non-blocking - don't fail if email fails)
     try {
       const emailHtml = generateManagerEmail(name, report);
@@ -195,14 +212,14 @@ Scores: Creator:${profiles[0]} Star:${profiles[1]} Supporter:${profiles[2]} Accu
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({
-        primary_profile: report.primary_profile,
-        secondary_profile: report.secondary_profile,
-        frequency_group: report.frequency_group,
-        profile_summary: report.profile_summary,
-        frequency_summary: report.frequency_summary,
-        natural_strengths: report.natural_strengths,
-        flow_state: report.flow_state,
-        stress_state: report.stress_state
+        primary_profile: report.primary_profile || primaryProfile,
+        secondary_profile: report.secondary_profile || secondaryProfile,
+        frequency_group: report.frequency_group || frequencyGroup,
+        profile_summary: report.profile_summary || `${primaryProfile} profile summary`,
+        frequency_summary: report.frequency_summary || `${frequencyGroup} frequency summary`,
+        natural_strengths: report.natural_strengths || `Natural strengths of ${primaryProfile}`,
+        flow_state: report.flow_state || `${primaryProfile} in flow state`,
+        stress_state: report.stress_state || `${primaryProfile} under stress`
       })
     };
   } catch (error) {
