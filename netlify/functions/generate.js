@@ -91,7 +91,11 @@ Generate a detailed profile report in this exact JSON format (valid JSON only, n
   "scoring_note": "One sentence noting any close scores or patterns in responses. If clear primary, write: 'Clear primary profile with strong secondary influence.'"
 }`;
 
-    const claudeResponse = await fetch('https://api.anthropic.com/v1/messages/create', {
+    if (!process.env.ANTHROPIC_API_KEY) {
+      throw new Error('ANTHROPIC_API_KEY environment variable not set');
+    }
+
+    const claudeResponse = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -106,7 +110,8 @@ Generate a detailed profile report in this exact JSON format (valid JSON only, n
     });
 
     if (!claudeResponse.ok) {
-      throw new Error(`Claude API error: ${claudeResponse.status}`);
+      const errorData = await claudeResponse.text();
+      throw new Error(`Claude API error ${claudeResponse.status}: ${errorData}`);
     }
 
     const claudeData = await claudeResponse.json();
@@ -122,9 +127,14 @@ Generate a detailed profile report in this exact JSON format (valid JSON only, n
       report = JSON.parse(jsonMatch[0]);
     }
 
-    // Send email to people@topcuvee.com
-    const emailHtml = generateManagerEmail(name, report);
-    await sendEmail('people@topcuvee.com', `Profile Report — ${name}`, emailHtml);
+    // Send email to people@topcuvee.com (non-blocking - don't fail if email fails)
+    try {
+      const emailHtml = generateManagerEmail(name, report);
+      await sendEmail('people@topcuvee.com', `Profile Report — ${name}`, emailHtml);
+      console.log(`✓ Email sent to people@topcuvee.com for ${name}`);
+    } catch (emailError) {
+      console.error('⚠ Email send failed (non-blocking):', emailError.message);
+    }
 
     // Return candidate-facing report (lite version)
     return {
@@ -155,6 +165,10 @@ Generate a detailed profile report in this exact JSON format (valid JSON only, n
 };
 
 async function sendEmail(to, subject, htmlContent) {
+  if (!process.env.RESEND_API_KEY) {
+    throw new Error('RESEND_API_KEY environment variable not set');
+  }
+
   const response = await fetch('https://api.resend.com/emails', {
     method: 'POST',
     headers: {
@@ -170,7 +184,8 @@ async function sendEmail(to, subject, htmlContent) {
   });
 
   if (!response.ok) {
-    throw new Error(`Resend API error: ${response.status}`);
+    const errorData = await response.text();
+    throw new Error(`Resend API error ${response.status}: ${errorData}`);
   }
 
   return await response.json();
