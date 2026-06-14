@@ -1,0 +1,7 @@
+{
+  "name": "tc-profile-assessment",
+  "version": "1.0.0",
+  "description": "Top Cuvée personality profile assessment",
+  "type": "module",
+  "private": true
+}

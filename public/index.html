@@ -1,0 +1,719 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Profile Assessment — Top Cuvée</title>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --font-display: 'Bebas Neue', 'Arial Black', sans-serif;
+      --font-body: 'Space Grotesk', system-ui, sans-serif;
+      --color-orange: #FF4E00;
+      --color-orange-dark: #D94200;
+      --color-orange-darker: #B33700;
+      --color-yellow: #FFFEBC;
+      --color-green: #3E9900;
+      --color-black: #0A0A0A;
+      --color-off-black: #1A1A1A;
+      --color-dark-grey: #3D3D3D;
+      --color-mid-grey: #7A7A7A;
+      --color-light-grey: #D4D4D4;
+      --color-off-white: #F7F7F2;
+      --color-white: #FFFFFF;
+      --color-success: #3E9900;
+      --color-warning: #FF9900;
+      --color-error: #CC2200;
+      --fg-1: var(--color-black);
+      --fg-2: var(--color-dark-grey);
+      --fg-3: var(--color-mid-grey);
+      --fg-on-dark: var(--color-white);
+      --bg-1: var(--color-yellow);
+      --bg-2: var(--color-off-white);
+      --bg-3: var(--color-white);
+      --space-2: 8px;
+      --space-3: 16px;
+      --space-4: 24px;
+      --space-5: 32px;
+      --space-6: 48px;
+      --radius-md: 8px;
+      --radius-lg: 16px;
+      --shadow-md: 0 6px 20px rgba(0,0,0,0.10);
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body { height: 100%; }
+    body {
+      font-family: var(--font-body);
+      color: var(--fg-2);
+      background: var(--bg-1);
+      line-height: 1.6;
+    }
+
+    .container {
+      max-width: 800px;
+      margin: 0 auto;
+      padding: var(--space-4);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+    }
+
+    .page { display: none; }
+    .page.active { display: block; }
+
+    /* PASSWORD PAGE */
+    .password-page {
+      text-align: center;
+    }
+
+    .logo {
+      font-family: var(--font-display);
+      font-size: 48px;
+      font-weight: 400;
+      text-transform: uppercase;
+      color: var(--color-orange);
+      margin-bottom: var(--space-5);
+      letter-spacing: 2px;
+    }
+
+    .page-title {
+      font-family: var(--font-display);
+      font-size: 36px;
+      font-weight: 400;
+      text-transform: uppercase;
+      color: var(--fg-1);
+      margin-bottom: var(--space-4);
+    }
+
+    .page-subtitle {
+      font-size: 16px;
+      color: var(--fg-2);
+      margin-bottom: var(--space-6);
+      line-height: 1.5;
+    }
+
+    .form-group {
+      margin-bottom: var(--space-4);
+      text-align: left;
+    }
+
+    label {
+      display: block;
+      font-size: 14px;
+      font-weight: 600;
+      text-transform: uppercase;
+      color: var(--fg-1);
+      margin-bottom: var(--space-2);
+      letter-spacing: 0.04em;
+    }
+
+    input[type="password"],
+    input[type="text"] {
+      width: 100%;
+      height: 48px;
+      padding: 0 16px;
+      border: 1.5px solid var(--color-light-grey);
+      border-radius: var(--radius-md);
+      font-family: var(--font-body);
+      font-size: 16px;
+      color: var(--fg-1);
+      transition: border-color 200ms ease, box-shadow 200ms ease;
+    }
+
+    input[type="password"]:focus,
+    input[type="text"]:focus {
+      outline: none;
+      border-color: var(--color-orange);
+      box-shadow: 0 0 0 3px rgba(255, 78, 0, 0.1);
+    }
+
+    button {
+      font-family: var(--font-body);
+      font-size: 14px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      padding: 14px 28px;
+      border: none;
+      border-radius: var(--radius-md);
+      cursor: pointer;
+      transition: all 200ms ease;
+    }
+
+    .btn-primary {
+      background: var(--color-orange);
+      color: white;
+      width: 100%;
+    }
+
+    .btn-primary:hover { background: var(--color-orange-dark); }
+    .btn-primary:active { background: var(--color-orange-darker); }
+    .btn-primary:disabled {
+      background: var(--color-mid-grey);
+      cursor: not-allowed;
+      opacity: 0.7;
+    }
+
+    .error {
+      color: var(--color-error);
+      font-size: 14px;
+      margin-top: var(--space-2);
+      font-weight: 500;
+    }
+
+    /* ASSESSMENT PAGE */
+    .progress-bar {
+      height: 4px;
+      background: var(--color-light-grey);
+      border-radius: 2px;
+      margin-bottom: var(--space-6);
+      overflow: hidden;
+    }
+
+    .progress-fill {
+      height: 100%;
+      background: var(--color-orange);
+      transition: width 300ms ease;
+    }
+
+    .section-header {
+      font-size: 14px;
+      font-weight: 600;
+      text-transform: uppercase;
+      color: var(--fg-3);
+      letter-spacing: 0.04em;
+      margin-bottom: var(--space-4);
+    }
+
+    .question {
+      background: white;
+      border: 1.5px solid var(--color-light-grey);
+      border-radius: var(--radius-lg);
+      padding: var(--space-4);
+      margin-bottom: var(--space-4);
+      transition: border-color 200ms ease, box-shadow 200ms ease;
+    }
+
+    .question.answered {
+      border-color: var(--color-orange);
+      box-shadow: 0 0 0 3px rgba(255, 78, 0, 0.08);
+    }
+
+    .question-text {
+      font-size: 16px;
+      font-weight: 500;
+      color: var(--fg-1);
+      margin-bottom: var(--space-3);
+    }
+
+    .options {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: var(--space-2);
+    }
+
+    .option {
+      display: flex;
+      align-items: center;
+      padding: 12px;
+      border: 1px solid var(--color-light-grey);
+      border-radius: var(--radius-md);
+      cursor: pointer;
+      transition: all 150ms ease;
+      background: var(--color-off-white);
+    }
+
+    .option:hover {
+      background: var(--bg-1);
+      border-color: var(--color-orange);
+    }
+
+    .option input[type="radio"] {
+      margin-right: var(--space-2);
+      cursor: pointer;
+      accent-color: var(--color-orange);
+    }
+
+    .option label {
+      flex: 1;
+      margin: 0;
+      font-size: 14px;
+      cursor: pointer;
+      text-transform: none;
+      font-weight: 400;
+      color: var(--fg-2);
+    }
+
+    .option input[type="radio"]:checked {
+      accent-color: var(--color-orange);
+    }
+
+    .nav-buttons {
+      display: flex;
+      gap: var(--space-3);
+      margin-top: var(--space-6);
+    }
+
+    .btn-secondary {
+      flex: 1;
+      background: var(--color-off-white);
+      color: var(--fg-1);
+      border: 1.5px solid var(--color-light-grey);
+    }
+
+    .btn-secondary:hover {
+      background: var(--bg-2);
+      border-color: var(--fg-3);
+    }
+
+    .btn-primary {
+      flex: 1;
+    }
+
+    /* LOADING PAGE */
+    .loading-spinner {
+      width: 48px;
+      height: 48px;
+      border: 3px solid var(--color-light-grey);
+      border-top-color: var(--color-orange);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+      margin: 0 auto var(--space-4);
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    .loading-page {
+      text-align: center;
+    }
+
+    /* REPORT PAGE */
+    .report-page {
+      background: white;
+      border-radius: var(--radius-lg);
+      padding: var(--space-6);
+      box-shadow: var(--shadow-md);
+    }
+
+    .report-header {
+      text-align: center;
+      margin-bottom: var(--space-6);
+      padding-bottom: var(--space-6);
+      border-bottom: 1px solid var(--color-light-grey);
+    }
+
+    .profile-name {
+      font-family: var(--font-display);
+      font-size: 48px;
+      font-weight: 400;
+      text-transform: uppercase;
+      color: var(--color-orange);
+      margin-bottom: var(--space-2);
+    }
+
+    .frequency-badge {
+      display: inline-block;
+      background: var(--color-orange);
+      color: white;
+      padding: 8px 16px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    .report-section {
+      margin-bottom: var(--space-5);
+    }
+
+    .report-section-title {
+      font-family: var(--font-display);
+      font-size: 20px;
+      font-weight: 400;
+      text-transform: uppercase;
+      color: var(--color-orange);
+      margin-bottom: var(--space-3);
+      letter-spacing: 1px;
+    }
+
+    .report-content {
+      font-size: 15px;
+      color: var(--fg-2);
+      line-height: 1.8;
+    }
+
+    .report-actions {
+      display: flex;
+      gap: var(--space-3);
+      margin-top: var(--space-6);
+      border-top: 1px solid var(--color-light-grey);
+      padding-top: var(--space-6);
+    }
+
+    .btn-print {
+      flex: 1;
+      background: var(--color-off-white);
+      color: var(--fg-1);
+      border: 1.5px solid var(--color-light-grey);
+    }
+
+    .btn-print:hover {
+      background: var(--bg-2);
+      border-color: var(--fg-3);
+    }
+
+    /* ERROR PAGE */
+    .error-page {
+      text-align: center;
+    }
+
+    .error-icon {
+      font-size: 48px;
+      margin-bottom: var(--space-4);
+    }
+
+    .error-message {
+      background: rgba(204, 34, 0, 0.08);
+      border-left: 4px solid var(--color-error);
+      color: var(--color-error);
+      padding: var(--space-4);
+      border-radius: var(--radius-md);
+      margin-bottom: var(--space-4);
+      font-size: 15px;
+      line-height: 1.6;
+    }
+
+    .btn-retry {
+      width: 100%;
+    }
+
+    @media (max-width: 600px) {
+      .container { padding: var(--space-3); }
+      .page-title { font-size: 28px; }
+      .profile-name { font-size: 32px; }
+      .options { grid-template-columns: 1fr; }
+      .report-page { padding: var(--space-4); }
+      .nav-buttons { flex-direction: column; }
+    }
+
+    @media print {
+      body { background: white; }
+      .container { padding: 0; }
+      .btn-print, .report-actions { display: none; }
+      .page { display: none !important; }
+      .page.active { display: block !important; }
+    }
+  </style>
+</head>
+<body>
+  <!-- PASSWORD PAGE -->
+  <div class="page password-page active">
+    <div class="container">
+      <div class="logo">Top Cuvée</div>
+      <h1 class="page-title">Profile Assessment</h1>
+      <p class="page-subtitle">Unlock your working style in 36 questions. Takes about 10 minutes.</p>
+      <form id="passwordForm">
+        <div class="form-group">
+          <label for="password">Password</label>
+          <input type="password" id="password" placeholder="Enter password" required>
+          <div class="error" id="passwordError"></div>
+        </div>
+        <button type="submit" class="btn-primary">Enter Assessment</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- NAME PAGE -->
+  <div class="page name-page">
+    <div class="container">
+      <div class="logo">Top Cuvée</div>
+      <h1 class="page-title">Your Name</h1>
+      <p class="page-subtitle">Let's personalise your assessment.</p>
+      <form id="nameForm">
+        <div class="form-group">
+          <label for="candidateName">Full Name</label>
+          <input type="text" id="candidateName" placeholder="Enter your full name" required>
+        </div>
+        <button type="submit" class="btn-primary">Start Assessment</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- ASSESSMENT PAGE -->
+  <div class="page assessment-page">
+    <div class="container">
+      <div class="progress-bar">
+        <div class="progress-fill" id="progressFill"></div>
+      </div>
+
+      <form id="assessmentForm">
+        <div id="questionsContainer"></div>
+        <div class="nav-buttons">
+          <button type="button" class="btn-secondary" id="prevBtn">← Previous</button>
+          <button type="submit" class="btn-primary" id="submitBtn">Submit Assessment</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- LOADING PAGE -->
+  <div class="page loading-page">
+    <div class="container">
+      <div class="loading-spinner"></div>
+      <h2 class="page-title">Generating Your Report</h2>
+      <p class="page-subtitle">Analysing your responses and crafting your profile...</p>
+    </div>
+  </div>
+
+  <!-- REPORT PAGE -->
+  <div class="page report-page">
+    <div class="container">
+      <div id="reportContent"></div>
+      <div class="report-actions">
+        <button type="button" class="btn-print" onclick="window.print()">🖨 Print to PDF</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ERROR PAGE -->
+  <div class="page error-page">
+    <div class="container">
+      <div class="error-icon">⚠️</div>
+      <h2 class="page-title">Something Went Wrong</h2>
+      <div class="error-message" id="errorMessage"></div>
+      <button type="button" class="btn-primary btn-retry" onclick="location.reload()">Try Again</button>
+    </div>
+  </div>
+
+  <script>
+    const PASSWORD = 'TCkyp2026';
+
+    const questions = [
+      // Section 1: How you work best
+      { section: 'How you work best', text: 'When starting a new project, your instinct is to:', options: ['Sketch out the big idea and get moving, refining as you go', 'Talk it through with others to build energy and buy-in', 'Make sure the right people and relationships are in place first', 'Gather the data and understand exactly what you\'re working with before acting'] },
+      { section: 'How you work best', text: 'You do your best work when:', options: ['You have space to think and create without interruption', 'You\'re visible — presenting, pitching, or leading from the front', 'You\'re part of a close-knit team with a clear shared goal', 'You have systems, structure, and clear metrics to work within'] },
+      { section: 'How you work best', text: 'A task that energises you is:', options: ['Generating new concepts or solving a problem no one\'s cracked before', 'Winning someone over — a pitch, a negotiation, a room', 'Helping a colleague work through a difficult situation', 'Analysing a dataset or process to find what\'s not working'] },
+      { section: 'How you work best', text: 'When you have too much on, your instinct is to:', options: ['Drop the routine stuff and focus on whatever\'s most exciting', 'Delegate — you know who to call', 'Push through — you don\'t want to let people down', 'Prioritise methodically and work through the list'] },
+      { section: 'How you work best', text: 'Your workspace tends to be:', options: ['Organised chaos — you know where everything is, roughly', 'Wherever you are — you\'re not desk-bound', 'Comfortable and personal — photos, plants, familiar things', 'Tidy and functional — you work better with less clutter'] },
+      { section: 'How you work best', text: 'You tend to make decisions:', options: ['Quickly and on instinct — you can always adjust later', 'Fast, based on what feels right in the room or conversation', 'Carefully, once you\'ve checked in with people you trust', 'Deliberately, after reviewing the available information'] },
+
+      // Section 2: Strengths and natural tendencies
+      { section: 'Strengths and natural tendencies', text: 'People most often come to you for:', options: ['Ideas and creative input', 'Energy, confidence, and direction', 'Support, loyalty, and a listening ear', 'Expertise, analysis, or a second opinion on the detail'] },
+      { section: 'Strengths and natural tendencies', text: 'In a team, you naturally gravitate toward:', options: ['Setting the vision and kicking things off', 'Representing the team externally — you\'re the face', 'Holding the team together and keeping morale up', 'Making sure things are done properly and nothing slips through'] },
+      { section: 'Strengths and natural tendencies', text: 'When you\'re at your best, colleagues would describe you as:', options: ['Innovative and full of ideas', 'Magnetic and persuasive', 'Reliable and genuinely caring', 'Sharp, thorough, and dependable'] },
+      { section: 'Strengths and natural tendencies', text: 'The thing you\'re most proud of professionally is:', options: ['Something you built or created', 'A moment you led, inspired, or won', 'A relationship you built or someone you helped', 'A problem you solved or a system you improved'] },
+      { section: 'Strengths and natural tendencies', text: 'Your strongest instinct in a crisis is to:', options: ['Come up with a new approach or workaround', 'Take the lead and keep everyone calm and focused', 'Check in on the people involved and hold things together', 'Diagnose what went wrong and fix the root cause'] },
+      { section: 'Strengths and natural tendencies', text: 'When given an open brief, you:', options: ['Love it — constraints kill your creativity', 'Thrive — you\'ll shape it and make it yours', 'Prefer some direction — you want to know what\'s needed before diving in', 'Feel uneasy — you want clear parameters and success criteria'] },
+
+      // Section 3: Energy and motivation
+      { section: 'Energy and motivation', text: 'What gets you out of bed on a Monday morning?', options: ['A new idea you\'ve been turning over all weekend', 'The people you\'ll meet or the opportunity to make something happen', 'Knowing your team needs you and you\'re going to show up for them', 'A clear plan and the satisfaction of making progress against it'] },
+      { section: 'Energy and motivation', text: 'You feel most alive when:', options: ['You\'re deep in creative flow — building, writing, designing, strategising', 'You\'re in a room, on a stage, or in a conversation where things are moving', 'You\'re with people you care about and making a real difference to them', 'You\'re mastering something — getting consistently better at a skill or system'] },
+      { section: 'Energy and motivation', text: 'What drains you fastest?', options: ['Repetitive admin and process', 'Being stuck behind a desk with no human contact', 'Conflict or a fractured team atmosphere', 'Chaos, ambiguity, or moving goalposts'] },
+      { section: 'Energy and motivation', text: 'At the end of a fulfilling day, you\'ve typically:', options: ['Made significant progress on something you\'re building', 'Had several meaningful or high-energy interactions', 'Done something genuinely useful for someone else', 'Completed something to a high standard'] },
+      { section: 'Energy and motivation', text: 'The idea of working completely alone for a week:', options: ['Sounds ideal — you\'d get so much done', 'Sounds hard — you need people around to stay sharp', 'Depends entirely on who\'s around and what\'s needed', 'Is fine if the work is well-defined and you have what you need'] },
+      { section: 'Energy and motivation', text: 'You\'re most motivated by:', options: ['Building something that didn\'t exist before', 'Recognition, influence, and being seen to succeed', 'Belonging — being part of something and feeling valued', 'Mastery — being genuinely excellent at what you do'] },
+
+      // Section 4: Working with others
+      { section: 'Working with others', text: 'In a meeting, you\'re most likely to:', options: ['Be the one with the lateral idea that reframes the whole conversation', 'Drive the agenda and dominate the room naturally', 'Make sure everyone\'s heard and the group stays aligned', 'Prepare well, ask precise questions, and challenge the logic'] },
+      { section: 'Working with others', text: 'When someone disagrees with you:', options: ['You\'re happy to debate — you\'re not precious about your ideas', 'You push back — you believe in your position until proven wrong', 'You try to understand their view and find common ground', 'You go away, check your facts, and come back with evidence'] },
+      { section: 'Working with others', text: 'Your preferred communication style:', options: ['Direct, informal, and idea-led', 'Confident, expressive, and persuasive', 'Warm, personal, and attentive', 'Precise, structured, and evidence-based'] },
+      { section: 'Working with others', text: 'When managing someone, your instinct is to:', options: ['Give them a clear direction and let them run — check in occasionally', 'Lead by example and keep them inspired', 'Build a genuine relationship and invest in their development', 'Set clear expectations, processes, and review points'] },
+      { section: 'Working with others', text: 'The type of colleague that frustrates you most:', options: ['Someone who kills ideas before they\'ve had a chance', 'Someone who\'s passive or lacks drive', 'Someone who\'s political, cold, or only out for themselves', 'Someone who\'s sloppy, inconsistent, or doesn\'t follow through'] },
+      { section: 'Working with others', text: 'You build trust with others by:', options: ['Sharing your thinking and showing you\'re genuinely invested', 'Delivering results and being someone people want to follow', 'Being there consistently — reliable, kind, and honest', 'Demonstrating competence and following through on your word'] },
+
+      // Section 5: Under pressure
+      { section: 'Under pressure', text: 'When the business hits a rough patch, your instinct is to:', options: ['Pivot — there\'s always another way', 'Double down — push harder and outwork the problem', 'Rally the team — morale and cohesion are what get you through', 'Audit — find exactly where the problem is and fix it properly'] },
+      { section: 'Under pressure', text: 'When you\'re stressed, you tend to:', options: ['Scatter — too many ideas, not enough follow-through', 'Become controlling or domineering', 'Absorb others\' stress and lose your own clarity', 'Withdraw and over-analyse'] },
+      { section: 'Under pressure', text: 'The thing most likely to derail a project you\'re leading is:', options: ['Getting bored once the exciting part is over', 'Losing the room — when people stop buying in', 'Falling apart when conflict or tension enters the team', 'Being asked to move faster than the data supports'] },
+      { section: 'Under pressure', text: 'When you fail at something, you:', options: ['Move on quickly — there\'s always a next idea', 'Feel it, but channel it into proving yourself on the next thing', 'Take it hard, especially if it affected people you care about', 'Analyse what went wrong methodically before trying again'] },
+      { section: 'Under pressure', text: 'The feedback you find hardest to hear is:', options: ['"You don\'t follow through."', '"You\'re too much / too intense."', '"You need to be tougher / set clearer limits."', '"You\'re too slow / too cautious."'] },
+      { section: 'Under pressure', text: 'What most often holds you back?', options: ['Finishing things — you\'re stronger on starts than endings', 'Knowing when to slow down or step back', 'Prioritising your own needs alongside others\'', 'Moving fast enough when the situation demands it'] },
+
+      // Section 6: Ambition and direction
+      { section: 'Ambition and direction', text: 'Your long-term ambition is best described as:', options: ['To build something significant — a brand, a product, a body of work', 'To be known and respected — a leader in your field', 'To be part of something meaningful and make a lasting difference to people', 'To become genuinely expert and deliver excellent results over the long term'] },
+      { section: 'Ambition and direction', text: 'Success, to you, looks like:', options: ['Creating something that has a life of its own', 'A track record of wins and a reputation that precedes you', 'Knowing the people around you are better for having worked with you', 'A high standard maintained consistently over time'] },
+      { section: 'Ambition and direction', text: 'The role you\'d least enjoy:', options: ['Process management — maintaining systems and compliance', 'Back-office work with no external visibility', 'A highly competitive, every-person-for-themselves environment', 'A fast-moving role with no structure and constant change'] },
+      { section: 'Ambition and direction', text: 'In five years, you\'d rather have:', options: ['Built something new — even if it failed — than managed something safe', 'Made a name for yourself in your industry', 'Deep, lasting relationships with a team that thrived under your involvement', 'A reputation for being the most reliable, thorough person in the room'] },
+      { section: 'Ambition and direction', text: 'The kind of work that plays to your strengths:', options: ['Innovation, strategy, product development, brand building', 'Sales, leadership, presenting, partnerships', 'People management, culture, operations, customer relationships', 'Finance, data, quality control, systems design'] },
+      { section: 'Ambition and direction', text: 'If you had to bet your career on one strength, it would be:', options: ['Seeing what others don\'t — pattern recognition and original thinking', 'Getting people on board — influence, energy, and presence', 'Showing up for people — loyalty, care, and consistency', 'Getting it right — precision, depth, and follow-through'] }
+    ];
+
+    const scoringMatrix = [
+      [0, 1, 2, 3], [0, 1, 2, 5], [0, 1, 2, 4], [0, 6, 2, 3], [0, 1, 2, 5], [0, 6, 2, 3],
+      [0, 1, 2, 5], [0, 1, 2, 5], [0, 1, 2, 4], [0, 1, 2, 5], [0, 1, 2, 5], [0, 1, 2, 4],
+      [0, 1, 2, 3], [0, 1, 2, 3], [0, 1, 2, 4], [0, 1, 2, 5], [0, 1, 7, 5], [0, 1, 2, 5],
+      [0, 1, 2, 4], [0, 6, 2, 4], [0, 1, 2, 4], [0, 1, 2, 5], [0, 1, 2, 5], [0, 1, 2, 5],
+      [0, 6, 2, 4], [0, 1, 2, 4], [0, 1, 2, 4], [0, 1, 2, 3], [0, 1, 2, 3], [0, 1, 2, 3],
+      [0, 1, 2, 5], [0, 1, 2, 5], [0, 1, 2, 4], [0, 1, 2, 3], [0, 1, 2, 5], [0, 1, 2, 5]
+    ];
+
+    const profileNames = ['Creator', 'Star', 'Supporter', 'Accumulator', 'Deal Maker', 'Lord', 'Trader', 'Mechanic'];
+    const profileMap = { 0: 'Creator', 1: 'Star', 2: 'Supporter', 3: 'Accumulator', 6: 'Deal Maker', 4: 'Lord', 7: 'Trader', 5: 'Mechanic' };
+
+    let responses = new Array(36).fill(null);
+    let currentPage = 0;
+
+    function showPage(page) {
+      const pages = document.querySelectorAll('.page');
+      pages.forEach(p => p.classList.remove('active'));
+      pages[page].classList.add('active');
+    }
+
+    function handlePasswordSubmit(e) {
+      e.preventDefault();
+      const pwd = document.getElementById('password').value;
+      const errorEl = document.getElementById('passwordError');
+
+      if (pwd === PASSWORD) {
+        document.querySelector('.password-page').classList.remove('active');
+        document.querySelector('.name-page').classList.add('active');
+      } else {
+        errorEl.textContent = 'Incorrect password.';
+      }
+    }
+
+    function handleNameSubmit(e) {
+      e.preventDefault();
+      const name = document.getElementById('candidateName').value;
+      window.candidateName = name;
+      document.querySelector('.name-page').classList.remove('active');
+      document.querySelector('.assessment-page').classList.add('active');
+      renderQuestions();
+    }
+
+    function renderQuestions() {
+      const container = document.getElementById('questionsContainer');
+      let currentSection = '';
+      let html = '';
+
+      questions.forEach((q, idx) => {
+        if (q.section !== currentSection) {
+          currentSection = q.section;
+          html += `<div class="section-header">${currentSection}</div>`;
+        }
+
+        const answered = responses[idx] !== null ? 'answered' : '';
+        html += `
+          <div class="question ${answered}">
+            <div class="question-text">${idx + 1}. ${q.text}</div>
+            <div class="options">
+              ${q.options.map((opt, i) => `
+                <label class="option">
+                  <input type="radio" name="q${idx}" value="${i}" ${responses[idx] === i ? 'checked' : ''}>
+                  <label>${opt}</label>
+                </label>
+              `).join('')}
+            </div>
+          </div>
+        `;
+      });
+
+      container.innerHTML = html;
+
+      document.querySelectorAll('input[type="radio"]').forEach(input => {
+        input.addEventListener('change', (e) => {
+          const qNum = parseInt(e.target.name.substring(1));
+          responses[qNum] = parseInt(e.target.value);
+          updateProgress();
+        });
+      });
+
+      updateProgress();
+    }
+
+    function updateProgress() {
+      const answered = responses.filter(r => r !== null).length;
+      const progress = (answered / 36) * 100;
+      document.getElementById('progressFill').style.width = progress + '%';
+      const isComplete = responses.every(r => r !== null);
+      document.getElementById('submitBtn').disabled = !isComplete;
+    }
+
+    async function handleAssessmentSubmit(e) {
+      e.preventDefault();
+      if (responses.some(r => r === null)) return;
+
+      showPage(2); // Loading page
+
+      const name = window.candidateName || 'Candidate';
+      const answers = responses.map((r, i) => scoringMatrix[i][r]);
+
+      try {
+        const response = await fetchWithRetry('/.netlify/functions/generate', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ answers, name })
+        });
+
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+
+        const report = await response.json();
+        displayReport(report);
+        showPage(3); // Report page
+      } catch (error) {
+        document.getElementById('errorMessage').textContent = `Failed to generate report: ${error.message}`;
+        showPage(4); // Error page
+      }
+    }
+
+    async function fetchWithRetry(url, options, maxRetries = 1) {
+      for (let i = 0; i <= maxRetries; i++) {
+        try {
+          return await fetch(url, options);
+        } catch (error) {
+          if (i < maxRetries && error.message.includes('RESET')) {
+            await new Promise(resolve => setTimeout(resolve, 2000));
+          } else throw error;
+        }
+      }
+    }
+
+    function displayReport(report) {
+      const html = `
+        <div class="report-header">
+          <div class="profile-name">${report.primary_profile}</div>
+          <div class="frequency-badge">${report.frequency_group}</div>
+        </div>
+
+        <div class="report-section">
+          <div class="report-section-title">Profile Summary</div>
+          <div class="report-content">${report.profile_summary}</div>
+        </div>
+
+        <div class="report-section">
+          <div class="report-section-title">Frequency Group</div>
+          <div class="report-content">${report.frequency_summary}</div>
+        </div>
+
+        <div class="report-section">
+          <div class="report-section-title">Natural Strengths</div>
+          <div class="report-content">${report.natural_strengths}</div>
+        </div>
+
+        <div class="report-section">
+          <div class="report-section-title">Flow vs Stress</div>
+          <div class="report-content">
+            <strong>In Flow:</strong> ${report.flow_state}<br><br>
+            <strong>Under Stress:</strong> ${report.stress_state}
+          </div>
+        </div>
+      `;
+
+      document.getElementById('reportContent').innerHTML = html;
+    }
+
+    document.getElementById('passwordForm').addEventListener('submit', handlePasswordSubmit);
+    document.getElementById('nameForm').addEventListener('submit', handleNameSubmit);
+    document.getElementById('assessmentForm').addEventListener('submit', handleAssessmentSubmit);
+    document.getElementById('prevBtn').addEventListener('click', (e) => {
+      e.preventDefault();
+      window.scrollTo(0, 0);
+    });
+  </script>
+</body>
+</html>
