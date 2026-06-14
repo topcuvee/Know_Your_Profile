@@ -89,9 +89,10 @@ Generate a detailed profile report in this exact JSON format (valid JSON only, n
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 25000); // 25 second timeout (Netlify limit is 26s)
 
+    let claudeResponse;
     try {
       console.log('🌐 Fetching from: https://api.anthropic.com/v1/messages');
-      const claudeResponse = await fetch('https://api.anthropic.com/v1/messages', {
+      claudeResponse = await fetch('https://api.anthropic.com/v1/messages', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -115,9 +116,10 @@ Generate a detailed profile report in this exact JSON format (valid JSON only, n
         throw new Error(`Claude API error ${claudeResponse.status}: ${errorData}`);
       }
     } catch (fetchError) {
+      clearTimeout(timeout);
       console.error('❌ Claude fetch error:', fetchError.message);
       if (fetchError.name === 'AbortError') {
-        throw new Error('Claude API timeout (10s) - request took too long');
+        throw new Error('Claude API timeout (25s) - request took too long');
       }
       throw fetchError;
     }
