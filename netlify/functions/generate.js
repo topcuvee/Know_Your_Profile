@@ -83,10 +83,14 @@ Generate a detailed profile report in this exact JSON format (valid JSON only, n
       throw new Error('ANTHROPIC_API_KEY environment variable not set');
     }
 
+    console.log('🔑 Using API key starting with:', process.env.ANTHROPIC_API_KEY.substring(0, 10) + '...');
+    console.log('📤 Calling Claude API with prompt:', claudePrompt.substring(0, 100));
+
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 10000); // 10 second timeout
 
     try {
+      console.log('🌐 Fetching from: https://api.anthropic.com/v1/messages');
       const claudeResponse = await fetch('https://api.anthropic.com/v1/messages', {
         method: 'POST',
         headers: {
@@ -104,11 +108,14 @@ Generate a detailed profile report in this exact JSON format (valid JSON only, n
 
       clearTimeout(timeout);
 
+      console.log('📥 Claude response status:', claudeResponse.status);
       if (!claudeResponse.ok) {
         const errorData = await claudeResponse.text();
+        console.error('❌ Claude API error response:', errorData);
         throw new Error(`Claude API error ${claudeResponse.status}: ${errorData}`);
       }
     } catch (fetchError) {
+      console.error('❌ Claude fetch error:', fetchError.message);
       if (fetchError.name === 'AbortError') {
         throw new Error('Claude API timeout (10s) - request took too long');
       }
