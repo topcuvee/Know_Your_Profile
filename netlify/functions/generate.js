@@ -53,23 +53,11 @@ export const handler = async (event) => {
     const frequencyGroup = frequencyGroupsMap[primaryIdx];
 
     // Generate report via Claude
-    const claudePrompt = `You are an expert in personality profiling and workforce assessment. Based on the following assessment scores, generate a comprehensive profile report.
+    const claudePrompt = `Generate a profile report in valid JSON format ONLY. No markdown, no explanations.
 
-Assessment scores (out of 36 for each profile):
-Creator: ${profiles[0]}
-Star: ${profiles[1]}
-Supporter: ${profiles[2]}
-Accumulator: ${profiles[3]}
-Deal Maker: ${profiles[4]}
-Lord: ${profiles[5]}
-Trader: ${profiles[6]}
-Mechanic: ${profiles[7]}
-
-Primary Profile: ${primaryProfile}
-Secondary Profile: ${secondaryProfile}
-Frequency Group: ${frequencyGroup}
-
-Candidate Name: ${name}
+Primary: ${primaryProfile}, Secondary: ${secondaryProfile}, Frequency: ${frequencyGroup}
+Scores: Creator:${profiles[0]} Star:${profiles[1]} Supporter:${profiles[2]} Accumulator:${profiles[3]} Deal Maker:${profiles[4]} Lord:${profiles[5]} Trader:${profiles[6]} Mechanic:${profiles[7]}
+Candidate: ${name}
 
 Generate a detailed profile report in this exact JSON format (valid JSON only, no markdown):
 {
@@ -95,23 +83,36 @@ Generate a detailed profile report in this exact JSON format (valid JSON only, n
       throw new Error('ANTHROPIC_API_KEY environment variable not set');
     }
 
-    const claudeResponse = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-api-key': process.env.ANTHROPIC_API_KEY,
-        'anthropic-version': '2023-06-01'
-      },
-      body: JSON.stringify({
-        model: 'claude-haiku-4-5-20251001',
-        max_tokens: 1200,
-        messages: [{ role: 'user', content: claudePrompt }]
-      })
-    });
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 10000); // 10 second timeout
 
-    if (!claudeResponse.ok) {
-      const errorData = await claudeResponse.text();
-      throw new Error(`Claude API error ${claudeResponse.status}: ${errorData}`);
+    try {
+      const claudeResponse = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-key': process.env.ANTHROPIC_API_KEY,
+          'anthropic-version': '2023-06-01'
+        },
+        body: JSON.stringify({
+          model: 'claude-haiku-4-5-20251001',
+          max_tokens: 800,
+          messages: [{ role: 'user', content: claudePrompt }]
+        }),
+        signal: controller.signal
+      });
+
+      clearTimeout(timeout);
+
+      if (!claudeResponse.ok) {
+        const errorData = await claudeResponse.text();
+        throw new Error(`Claude API error ${claudeResponse.status}: ${errorData}`);
+      }
+    } catch (fetchError) {
+      if (fetchError.name === 'AbortError') {
+        throw new Error('Claude API timeout (10s) - request took too long');
+      }
+      throw fetchError;
     }
 
     const claudeData = await claudeResponse.json();
