@@ -161,7 +161,7 @@ Return exactly this JSON structure with real content:
             'Content-Type': 'application/json'
           },
           body: JSON.stringify({
-            from: 'reports@topcuvee.com',
+            from: 'onboarding@resend.dev',
             to: process.env.MANAGER_EMAIL,
             subject: `Profile Report: ${name} (${primaryProfile})`,
             html: emailHtml
