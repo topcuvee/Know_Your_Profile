@@ -154,7 +154,7 @@ Return exactly this JSON structure with real content:
 <p>${report.stress_state}</p>
         `;
 
-        await fetch('https://api.resend.com/emails', {
+        const emailResponse = await fetch('https://api.resend.com/emails', {
           method: 'POST',
           headers: {
             'Authorization': `Bearer ${process.env.RESEND_API_KEY}`,
@@ -167,7 +167,11 @@ Return exactly this JSON structure with real content:
             html: emailHtml
           })
         });
-        console.log('📧 Manager email sent');
+        const emailData = await emailResponse.json();
+        if (!emailResponse.ok) {
+          throw new Error(`Resend API ${emailResponse.status}: ${JSON.stringify(emailData)}`);
+        }
+        console.log('📧 Manager email sent:', emailData.id);
       } catch (emailError) {
         console.error('⚠ Email send failed (non-blocking):', emailError.message);
       }
