@@ -320,6 +320,15 @@
       margin-bottom: var(--space-2);
     }
 
+    .report-secondary {
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--fg-3);
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      margin-bottom: var(--space-3);
+    }
+
     .frequency-badge {
       display: inline-block;
       background: var(--color-orange);
@@ -660,122 +669,128 @@
         return;
       }
 
-      console.log('Moving to loading page...');
-      showPage(2); // Loading page
-
       const name = window.candidateName || 'Candidate';
       const answers = responses.map((r, i) => scoringMatrix[i][r]);
+      const reportId = (crypto.randomUUID ? crypto.randomUUID()
+        : Date.now() + '-' + Math.random().toString(36).slice(2));
 
       console.log('=== ASSESSMENT SUBMISSION ===');
-      console.log('Candidate name:', name);
-      console.log('Raw responses:', responses);
-      console.log('Answers (after scoring matrix):', answers);
-      console.log('API endpoint:', '/.netlify/functions/generate');
+      console.log('Candidate name:', name, '| reportId:', reportId);
 
-      showPage(3); // Show loading screen immediately
+      showPage(3); // Loading screen
       try {
-        console.log('📤 Calling API...');
-        const payload = { answers, name };
-        console.log('Payload:', JSON.stringify(payload).substring(0, 100) + '...');
-
-        const response = await fetchWithRetry('/.netlify/functions/generate', {
+        // Kick off the background generation job
+        await fetch('/.netlify/functions/generate-background', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload)
+          body: JSON.stringify({ answers, name, reportId })
         });
-
-        console.log('📥 Response status:', response.status, response.statusText);
-
-        if (!response.ok) {
-          const errorText = await response.text();
-          console.error('❌ API error response:', errorText);
-          throw new Error(`HTTP ${response.status}: ${errorText}`);
-        }
-
-        const responseText = await response.text();
-        console.log('📄 Raw response text:', responseText.substring(0, 200));
-
-        let report;
-        try {
-          report = JSON.parse(responseText);
-        } catch (parseError) {
-          console.error('❌ Failed to parse JSON:', parseError);
-          console.error('Response was:', responseText);
-          throw parseError;
-        }
-
-        console.log('✅ Report received:', report);
-        displayReport(report);
-        console.log('Switching to report page (page 4)...');
-        setTimeout(() => {
-          console.log('showPage(4) called');
-          showPage(4);
-        }, 100); // Report page with slight delay
+        console.log('📤 Background job started, polling for result...');
+        pollForReport(reportId);
       } catch (error) {
-        console.error('❌ Assessment error:', error);
-        console.error('Full error stack:', error.stack);
-        document.getElementById('errorMessage').textContent = `Failed to generate report: ${error.message}. Check browser console for full details.`;
-        showPage(5); // Error page
+        console.error('❌ Failed to start generation:', error);
+        document.getElementById('errorMessage').textContent =
+          `Failed to start report generation: ${error.message}.`;
+        showPage(5);
       }
     }
 
-    async function fetchWithRetry(url, options, maxRetries = 1) {
-      for (let i = 0; i <= maxRetries; i++) {
-        try {
-          const controller = new AbortController();
-          const timeoutId = setTimeout(() => controller.abort(), 30000); // 30s timeout
+    async function pollForReport(reportId) {
+      const started = Date.now();
+      const maxWaitMs = 150000; // 2.5 min
+      const intervalMs = 3000;
 
-          try {
-            const response = await fetch(url, { ...options, signal: controller.signal });
-            clearTimeout(timeoutId);
-            return response;
-          } catch (error) {
-            clearTimeout(timeoutId);
-            if (error.name === 'AbortError') {
-              throw new Error('Request timeout after 30 seconds');
-            }
-            throw error;
+      async function check() {
+        if (Date.now() - started > maxWaitMs) {
+          document.getElementById('errorMessage').textContent =
+            'Report generation timed out. Please try again.';
+          showPage(5);
+          return;
+        }
+        try {
+          const res = await fetch('/.netlify/functions/report-status?id=' + encodeURIComponent(reportId));
+          const data = await res.json();
+
+          if (data.status === 'done') {
+            console.log('✅ Report ready:', data);
+            displayReport(data);
+            setTimeout(() => showPage(4), 100);
+            return;
           }
+          if (data.status === 'error') {
+            console.error('❌ Generation error:', data.error);
+            document.getElementById('errorMessage').textContent =
+              `Failed to generate report: ${data.error}.`;
+            showPage(5);
+            return;
+          }
+          // still pending
+          setTimeout(check, intervalMs);
         } catch (error) {
-          if (i < maxRetries && error.message.includes('RESET')) {
-            await new Promise(resolve => setTimeout(resolve, 2000));
-          } else throw error;
+          console.error('Poll error (will retry):', error);
+          setTimeout(check, intervalMs);
         }
       }
+      check();
     }
 
-    function displayReport(report) {
-      console.log('Report data:', report);
+    function esc(s) {
+      return String(s == null ? '' : s)
+        .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    }
 
-      if (!report.primary_profile) {
-        console.error('Missing primary_profile in report');
+    function displayReport(data) {
+      console.log('Report data:', data);
+
+      if (!data.primary_profile || !data.report) {
+        console.error('Missing report data');
         throw new Error('Invalid report format');
       }
 
-      const html = `
-        <div class="report-header">
-          <div class="profile-name">${report.primary_profile}</div>
-          <div class="frequency-badge">${report.frequency_group}</div>
-        </div>
+      const r = data.report;
+      // Candidate-facing sections only — hiring verdict & rationale are manager-only.
+      const sections = [
+        ['Who You Are', r.archetype],
+        ['Your Natural Energy', r.frequency],
+        ['Where You Shine', r.natural_strengths],
+        ['Where You Can Grow', r.blind_spots]
+      ];
 
-        <div class="report-section">
-          <div class="report-content" style="font-size: 16px; line-height: 1.6;">
-            ${report.candidate_report || 'Loading...'}
-          </div>
+      let html = `
+        <div class="report-header">
+          <div class="profile-name">${esc(data.primary_profile)}</div>
+          <div class="report-secondary">Secondary: ${esc(data.secondary_profile)}</div>
+          <div class="frequency-badge">${esc(data.frequency_group)}</div>
         </div>
       `;
 
-      const reportContent = document.getElementById('reportContent');
-      reportContent.innerHTML = html;
+      for (const [title, body] of sections) {
+        html += `
+          <div class="report-section">
+            <div class="report-section-title">${title}</div>
+            <div class="report-content">${esc(body)}</div>
+          </div>`;
+      }
+
+      // Flow vs Stress — combined section
+      html += `
+        <div class="report-section">
+          <div class="report-section-title">Flow vs Stress</div>
+          <div class="report-content"><strong>In flow:</strong> ${esc(r.flow_state)}<br><br><strong>Under stress:</strong> ${esc(r.stress_state)}</div>
+        </div>
+        <div class="report-section">
+          <div class="report-section-title">How You're Best Managed</div>
+          <div class="report-content">${esc(r.management_guide)}</div>
+        </div>
+        <div class="report-section">
+          <div class="report-section-title">Where You'll Thrive</div>
+          <div class="report-content"><strong>Strong fit:</strong> ${esc(r.role_fit_strong)}<br><br><strong>Roles to avoid:</strong> ${esc(r.role_fit_avoid)}</div>
+        </div>`;
+
+      document.getElementById('reportContent').innerHTML = html;
       console.log('Report rendered to DOM');
     }
 
-    // Debug: Check if function endpoint is accessible
-    fetch('/.netlify/functions/generate', { method: 'OPTIONS' })
-      .then(r => console.log('✓ Function endpoint accessible'))
-      .catch(e => console.warn('⚠ Function endpoint may not be accessible:', e.message));
-
-    // Test mode: Press number keys to auto-fill (1=Creator, 2=Star, 3=Supporter, etc)
     document.getElementById('passwordForm').addEventListener('submit', handlePasswordSubmit);
     document.getElementById('nameForm').addEventListener('submit', handleNameSubmit);
     document.getElementById('assessmentForm').addEventListener('submit', handleAssessmentSubmit);
