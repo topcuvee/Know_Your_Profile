@@ -50,7 +50,7 @@ ${JSON_INSTRUCTION}`;
     if (!process.env.ANTHROPIC_API_KEY) throw new Error('ANTHROPIC_API_KEY not set');
 
     const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 9000);
+    const timeout = setTimeout(() => controller.abort(), 20000);
 
     let report = null;
     let debugError = null;
