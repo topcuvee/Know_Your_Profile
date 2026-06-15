@@ -1,17 +1,15 @@
-import { getStore } from '@netlify/blobs';
-
 // ---- Wealth Dynamics framework reference (kept server-side, never shown in questions) ----
 const SYSTEM_PROMPT = `You are an expert profiler writing for Top Cuvée, a growing wine and hospitality business. You produce candid, professional profile reports based on the Wealth Dynamics framework, used to understand how a person naturally works and where they fit on a team.
 
 THE 8 PROFILES
 - Creator (Dynamo): generative, idea-led, builds things, future-focused. Real-world archetype e.g. James Dyson, Steve Jobs.
 - Star (Dynamo): magnetic, influential, leads through personal brand and presence. e.g. Richard Branson, Oprah Winfrey.
-- Deal Maker (Blaze): connects people, reads rooms, negotiates, thrives on relationships and timing. e.g. a great commercial dealmaker.
+- Deal Maker (Blaze): connects people, reads rooms, negotiates, thrives on relationships and timing.
 - Supporter (Blaze): relationship-led, loyal, team-first, lifts others. e.g. Sheryl Sandberg.
-- Trader (Tempo): timing, rhythm, buying low/selling high, market sense. e.g. a sharp buyer/trader.
+- Trader (Tempo): timing, rhythm, buying low/selling high, market sense.
 - Accumulator (Tempo): patient, steady, asset-building, reliable, methodical. e.g. Warren Buffett.
-- Lord (Steel): data, control, cashflow, systems, detail. e.g. a rigorous operator/financier.
-- Mechanic (Steel): process, optimisation, builds better systems, craft and quality. e.g. an engineer-operator.
+- Lord (Steel): data, control, cashflow, systems, detail.
+- Mechanic (Steel): process, optimisation, builds better systems, craft and quality.
 
 THE 4 FREQUENCIES
 - Dynamo (Creator + Star): generative, fast-moving, idea-led. Gap: grounding, execution, consistency.
@@ -22,13 +20,13 @@ THE 4 FREQUENCIES
 WRITING RULES
 - British English throughout.
 - Write in the third person using the person's FIRST NAME (e.g. "Erin is a Star profile...").
-- Ground everything in a wine / hospitality SME context — the kinds of roles and situations Top Cuvée actually has (wine buying, brand and product, front of house, guest experience, wholesale and trade accounts, operations, finance, systems).
+- Ground everything in a wine / hospitality SME context — the kinds of roles Top Cuvée actually has (wine buying, brand and product, front of house, guest experience, wholesale and trade accounts, operations, finance, systems).
 - Be direct, specific and useful. No coaching waffle, no hedging, no bullet-point padding — flowing prose only.
-- Use the candidate's actual score distribution to judge how decisive vs. scattered the profile is, but describe it qualitatively. Do NOT quote raw numbers.
+- Use the candidate's score distribution to judge how decisive vs. scattered the profile is, but describe it qualitatively. Do NOT quote raw numbers.
 - In the archetype, name a single well-known real-world reference figure that fits the primary profile, and weave in the secondary profile's influence.
-- The candidate will read every field EXCEPT hiring_verdict and assessment_rationale, which are for the hiring manager only — so keep the candidate-facing fields constructive and fair while still honest about blind spots.
+- The candidate reads every field EXCEPT hiring_verdict and assessment_rationale, which are for the hiring manager only — keep candidate-facing fields constructive and fair while still honest about blind spots.
 
-Each field should be substantial — roughly 3–5 sentences (2–3 for flow_state and stress_state), matching the depth of a professional written assessment.`;
+Each field should be substantial — roughly 3-4 sentences (2-3 for flow_state and stress_state).`;
 
 const PROFILE_NAMES = ['Creator', 'Star', 'Supporter', 'Accumulator', 'Deal Maker', 'Lord', 'Trader', 'Mechanic'];
 const FREQUENCY_MAP = ['Dynamo', 'Dynamo', 'Blaze', 'Tempo', 'Blaze', 'Steel', 'Tempo', 'Steel'];
@@ -36,17 +34,17 @@ const FREQUENCY_MAP = ['Dynamo', 'Dynamo', 'Blaze', 'Tempo', 'Blaze', 'Steel', '
 const REPORT_SCHEMA = {
   type: 'object',
   properties: {
-    archetype: { type: 'string', description: "Who they are: primary profile archetype with a real-world reference figure, and how the secondary profile shapes them." },
-    frequency: { type: 'string', description: "Their natural energy: what the frequency group means in practice, and how concentrated vs. spread their profile is (qualitative)." },
-    natural_strengths: { type: 'string', description: "Where they shine, in a wine/hospitality context." },
-    blind_spots: { type: 'string', description: "Where they struggle or create friction. Direct and specific." },
-    flow_state: { type: 'string', description: "What puts them in flow (2-3 sentences)." },
-    stress_state: { type: 'string', description: "How stress shows up and what derails them (2-3 sentences)." },
-    management_guide: { type: 'string', description: "How to get the best out of them: communication, autonomy, feedback, motivation." },
-    role_fit_strong: { type: 'string', description: "Roles and functions in a wine/hospitality SME where they will thrive." },
-    role_fit_avoid: { type: 'string', description: "Roles and responsibilities that will drain them." },
-    hiring_verdict: { type: 'string', enum: ['Strong fit', 'Conditional fit', 'Not recommended'], description: "Manager-only verdict." },
-    assessment_rationale: { type: 'string', description: "Manager-only: one-paragraph plain-English rationale for the verdict, noting score decisiveness." }
+    archetype: { type: 'string' },
+    frequency: { type: 'string' },
+    natural_strengths: { type: 'string' },
+    blind_spots: { type: 'string' },
+    flow_state: { type: 'string' },
+    stress_state: { type: 'string' },
+    management_guide: { type: 'string' },
+    role_fit_strong: { type: 'string' },
+    role_fit_avoid: { type: 'string' },
+    hiring_verdict: { type: 'string', enum: ['Strong fit', 'Conditional fit', 'Not recommended'] },
+    assessment_rationale: { type: 'string' }
   },
   required: [
     'archetype', 'frequency', 'natural_strengths', 'blind_spots', 'flow_state',
@@ -57,28 +55,23 @@ const REPORT_SCHEMA = {
 };
 
 export const handler = async (event) => {
+  if (event.httpMethod === 'OPTIONS') {
+    return { statusCode: 200, headers: { 'Access-Control-Allow-Origin': '*' } };
+  }
   if (event.httpMethod !== 'POST') {
     return { statusCode: 405, body: 'Method not allowed' };
   }
 
-  let reportId;
   try {
-    const body = JSON.parse(event.body);
-    const { answers, name } = body;
-    reportId = body.reportId;
-
-    if (!answers || answers.length !== 36 || !name || !reportId) {
+    const { answers, name } = JSON.parse(event.body);
+    if (!answers || answers.length !== 36 || !name) {
       return { statusCode: 400, body: JSON.stringify({ error: 'Invalid input' }) };
     }
-
-    const store = getStore('reports');
 
     // Score responses
     const profiles = [0, 0, 0, 0, 0, 0, 0, 0];
     const profileValueToIndex = { 0: 0, 1: 1, 2: 2, 3: 3, 4: 5, 5: 7, 6: 4, 7: 6 };
-    answers.forEach((v) => {
-      if (v >= 0 && v <= 7) profiles[profileValueToIndex[v]]++;
-    });
+    answers.forEach((v) => { if (v >= 0 && v <= 7) profiles[profileValueToIndex[v]]++; });
 
     const sorted = profiles
       .map((score, idx) => ({ profile: idx, score }))
@@ -88,14 +81,9 @@ export const handler = async (event) => {
     const primaryProfile = PROFILE_NAMES[primaryIdx];
     const secondaryProfile = PROFILE_NAMES[sorted[1].profile];
     const frequencyGroup = FREQUENCY_MAP[primaryIdx];
-
     const firstName = name.trim().split(/\s+/)[0];
-
-    // Readable score distribution (qualitative use only)
-    const distribution = sorted
-      .filter(s => s.score > 0)
-      .map(s => `${PROFILE_NAMES[s.profile]}: ${s.score}`)
-      .join(', ');
+    const distribution = sorted.filter(s => s.score > 0)
+      .map(s => `${PROFILE_NAMES[s.profile]}: ${s.score}`).join(', ');
 
     const userPrompt = `Write a profile report for this candidate.
 
@@ -103,14 +91,17 @@ First name: ${firstName}
 Primary profile: ${primaryProfile}
 Secondary profile: ${secondaryProfile}
 Frequency group: ${frequencyGroup}
-Score distribution (out of 36, for your qualitative judgement only — do not quote the numbers): ${distribution}
+Score distribution (out of 36, for qualitative judgement only — do not quote numbers): ${distribution}
 
 Fill every field of the report.`;
 
-    let report;
-    try {
-      if (!process.env.ANTHROPIC_API_KEY) throw new Error('ANTHROPIC_API_KEY not set');
+    if (!process.env.ANTHROPIC_API_KEY) throw new Error('ANTHROPIC_API_KEY not set');
 
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 24000);
+
+    let report = null;
+    try {
       const claudeRes = await fetch('https://api.anthropic.com/v1/messages', {
         method: 'POST',
         headers: {
@@ -120,43 +111,32 @@ Fill every field of the report.`;
         },
         body: JSON.stringify({
           model: 'claude-sonnet-4-6',
-          max_tokens: 4000,
+          max_tokens: 2200,
           system: SYSTEM_PROMPT,
+          thinking: { type: 'disabled' },
           output_config: {
-            effort: 'high',
+            effort: 'low',
             format: { type: 'json_schema', schema: REPORT_SCHEMA }
           },
           messages: [{ role: 'user', content: userPrompt }]
-        })
+        }),
+        signal: controller.signal
       });
+      clearTimeout(timeout);
 
       if (!claudeRes.ok) {
         const errText = await claudeRes.text();
         throw new Error(`Claude API ${claudeRes.status}: ${errText}`);
       }
-
       const claudeData = await claudeRes.json();
       const text = claudeData.content.find(b => b.type === 'text')?.text || '';
       report = JSON.parse(text);
       console.log('✅ Claude report generated for', firstName);
     } catch (apiError) {
+      clearTimeout(timeout);
       console.error('❌ Claude generation failed:', apiError.message);
-      report = null;
-    }
-
-    if (!report || !report.archetype) {
       report = fallbackReport(firstName, primaryProfile, secondaryProfile, frequencyGroup);
     }
-
-    const fullResult = {
-      status: 'done',
-      primary_profile: primaryProfile,
-      secondary_profile: secondaryProfile,
-      frequency_group: frequencyGroup,
-      report
-    };
-
-    await store.setJSON(reportId, fullResult);
 
     // Send manager email (non-blocking)
     if (process.env.RESEND_API_KEY && process.env.MANAGER_EMAIL) {
@@ -174,8 +154,7 @@ Fill every field of the report.`;
 <h3>How They're Best Managed</h3><p>${r.management_guide}</p>
 <h3>Role Fit</h3><p><strong>Strong fit:</strong> ${r.role_fit_strong}</p><p><strong>Roles to avoid:</strong> ${r.role_fit_avoid}</p>
 <hr>
-<h3>Our Assessment: ${r.hiring_verdict}</h3><p>${r.assessment_rationale}</p>
-`;
+<h3>Our Assessment: ${r.hiring_verdict}</h3><p>${r.assessment_rationale}</p>`;
         const emailRes = await fetch('https://api.resend.com/emails', {
           method: 'POST',
           headers: {
@@ -197,17 +176,23 @@ Fill every field of the report.`;
       }
     }
 
-    return { statusCode: 200, body: 'ok' };
+    return {
+      statusCode: 200,
+      headers: { 'Access-Control-Allow-Origin': '*', 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        primary_profile: primaryProfile,
+        secondary_profile: secondaryProfile,
+        frequency_group: frequencyGroup,
+        report
+      })
+    };
   } catch (error) {
-    console.error('Fatal error:', error);
-    // Best-effort: record the error so the client stops polling
-    try {
-      if (reportId) {
-        const store = getStore('reports');
-        await store.setJSON(reportId, { status: 'error', error: error.message });
-      }
-    } catch (_) { /* ignore */ }
-    return { statusCode: 500, body: JSON.stringify({ error: error.message }) };
+    console.error('Error:', error);
+    return {
+      statusCode: 500,
+      headers: { 'Access-Control-Allow-Origin': '*' },
+      body: JSON.stringify({ error: error.message })
+    };
   }
 };
 

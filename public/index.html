@@ -671,67 +671,38 @@
 
       const name = window.candidateName || 'Candidate';
       const answers = responses.map((r, i) => scoringMatrix[i][r]);
-      const reportId = (crypto.randomUUID ? crypto.randomUUID()
-        : Date.now() + '-' + Math.random().toString(36).slice(2));
 
       console.log('=== ASSESSMENT SUBMISSION ===');
-      console.log('Candidate name:', name, '| reportId:', reportId);
+      console.log('Candidate name:', name);
 
       showPage(3); // Loading screen
       try {
-        // Kick off the background generation job
-        await fetch('/.netlify/functions/generate-background', {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 60000);
+        const res = await fetch('/.netlify/functions/generate', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ answers, name, reportId })
+          body: JSON.stringify({ answers, name }),
+          signal: controller.signal
         });
-        console.log('📤 Background job started, polling for result...');
-        pollForReport(reportId);
+        clearTimeout(timeoutId);
+
+        if (!res.ok) {
+          const errText = await res.text();
+          throw new Error(`HTTP ${res.status}: ${errText}`);
+        }
+        const data = await res.json();
+        console.log('✅ Report received:', data);
+        displayReport(data);
+        setTimeout(() => showPage(4), 100);
       } catch (error) {
-        console.error('❌ Failed to start generation:', error);
-        document.getElementById('errorMessage').textContent =
-          `Failed to start report generation: ${error.message}.`;
+        console.error('❌ Generation failed:', error);
+        const msg = error.name === 'AbortError'
+          ? 'The report took too long to generate. Please try again.'
+          : `Failed to generate report: ${error.message}.`;
+        document.getElementById('errorMessage').textContent = msg;
         showPage(5);
       }
-    }
-
-    async function pollForReport(reportId) {
-      const started = Date.now();
-      const maxWaitMs = 150000; // 2.5 min
-      const intervalMs = 3000;
-
-      async function check() {
-        if (Date.now() - started > maxWaitMs) {
-          document.getElementById('errorMessage').textContent =
-            'Report generation timed out. Please try again.';
-          showPage(5);
-          return;
-        }
-        try {
-          const res = await fetch('/.netlify/functions/report-status?id=' + encodeURIComponent(reportId));
-          const data = await res.json();
-
-          if (data.status === 'done') {
-            console.log('✅ Report ready:', data);
-            displayReport(data);
-            setTimeout(() => showPage(4), 100);
-            return;
-          }
-          if (data.status === 'error') {
-            console.error('❌ Generation error:', data.error);
-            document.getElementById('errorMessage').textContent =
-              `Failed to generate report: ${data.error}.`;
-            showPage(5);
-            return;
-          }
-          // still pending
-          setTimeout(check, intervalMs);
-        } catch (error) {
-          console.error('Poll error (will retry):', error);
-          setTimeout(check, intervalMs);
-        }
-      }
-      check();
     }
 
     function esc(s) {
