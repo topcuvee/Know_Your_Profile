@@ -686,6 +686,7 @@
       console.log('Answers (after scoring matrix):', answers);
       console.log('API endpoint:', '/.netlify/functions/generate');
 
+      showPage(3); // Show loading screen immediately
       try {
         console.log('📤 Calling API...');
         const payload = { answers, name };
