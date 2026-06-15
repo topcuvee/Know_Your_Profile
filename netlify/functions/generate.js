@@ -161,7 +161,7 @@ Return exactly this JSON structure with real content:
             'Content-Type': 'application/json'
           },
           body: JSON.stringify({
-            from: 'onboarding@resend.dev',
+            from: 'reports@topcuvee.com',
             to: process.env.MANAGER_EMAIL,
             subject: `Profile Report: ${name} (${primaryProfile})`,
             html: emailHtml
@@ -171,9 +171,8 @@ Return exactly this JSON structure with real content:
         if (!emailResponse.ok) {
           throw new Error(`Resend API ${emailResponse.status}: ${JSON.stringify(emailData)}`);
         }
-        console.log('✅ Manager email sent:', emailData.id);
       } catch (emailError) {
-        console.error('❌ Email send failed (non-blocking):', emailError.message);
+        // Email send failed silently - non-blocking
       }
     }
 
