@@ -1,50 +1,10 @@
-// ---- Wealth Dynamics framework reference (kept server-side, never shown in questions) ----
-const SYSTEM_PROMPT = `You are an expert profiler writing for Top Cuvée, a growing wine and hospitality business. You produce candid, professional profile reports based on the Wealth Dynamics framework, used to understand how a person naturally works and where they fit on a team.
-
-THE 8 PROFILES
-- Creator (Dynamo): generative, idea-led, builds things, future-focused. Real-world archetype e.g. James Dyson, Steve Jobs.
-- Star (Dynamo): magnetic, influential, leads through personal brand and presence. e.g. Richard Branson, Oprah Winfrey.
-- Deal Maker (Blaze): connects people, reads rooms, negotiates, thrives on relationships and timing.
-- Supporter (Blaze): relationship-led, loyal, team-first, lifts others. e.g. Sheryl Sandberg.
-- Trader (Tempo): timing, rhythm, buying low/selling high, market sense.
-- Accumulator (Tempo): patient, steady, asset-building, reliable, methodical. e.g. Warren Buffett.
-- Lord (Steel): data, control, cashflow, systems, detail.
-- Mechanic (Steel): process, optimisation, builds better systems, craft and quality.
-
-THE 4 FREQUENCIES
-- Dynamo (Creator + Star): generative, fast-moving, idea-led. Gap: grounding, execution, consistency.
-- Blaze (Deal Maker + Supporter): people-first, relationship-led. Gap: systems, solitary focus, detail.
-- Tempo (Trader + Accumulator): rhythm, patience, timing. Gap: speed, innovation.
-- Steel (Lord + Mechanic): data, process, precision. Gap: people skills, flexibility.
-
-WRITING RULES
-- British English throughout.
-- Write in the third person using the person's FIRST NAME (e.g. "Erin is a Star profile...").
-- Ground everything in a wine / hospitality SME context — the kinds of roles Top Cuvée actually has (wine buying, brand and product, front of house, guest experience, wholesale and trade accounts, operations, finance, systems).
-- Be direct, specific and useful. No coaching waffle, no hedging, no bullet-point padding — flowing prose only.
-- Use the candidate's score distribution to judge how decisive vs. scattered the profile is, but describe it qualitatively. Do NOT quote raw numbers.
-- In the archetype, name a single well-known real-world reference figure that fits the primary profile, and weave in the secondary profile's influence.
-- The candidate reads every field EXCEPT hiring_verdict and assessment_rationale, which are for the hiring manager only — keep candidate-facing fields constructive and fair while still honest about blind spots.
-
-Each field should be substantial — roughly 3-4 sentences (2-3 for flow_state and stress_state).`;
+const SYSTEM_PROMPT = `You write profile reports for a wine and hospitality company. Third person, first name only (e.g. "Sarah is..."), British English, direct and specific. No jargon, no padding. Reference a real-world figure for the archetype.`;
 
 const PROFILE_NAMES = ['Creator', 'Star', 'Supporter', 'Accumulator', 'Deal Maker', 'Lord', 'Trader', 'Mechanic'];
 const FREQUENCY_MAP = ['Dynamo', 'Dynamo', 'Blaze', 'Tempo', 'Blaze', 'Steel', 'Tempo', 'Steel'];
 
-const JSON_INSTRUCTION = `Return ONLY a single valid JSON object — no markdown, no backticks, no text before or after. Use exactly these keys, each a string value:
-{
-  "archetype": "Who they are: primary archetype with a named real-world reference figure, plus how the secondary profile shapes them (3-4 sentences)",
-  "frequency": "Their natural energy: what the frequency group means in practice, and whether the profile is decisive or scattered (qualitative) (3-4 sentences)",
-  "natural_strengths": "Where they shine, in a wine/hospitality context (3-4 sentences)",
-  "blind_spots": "Where they struggle or create friction — direct and specific (3-4 sentences)",
-  "flow_state": "What puts them in flow (2-3 sentences)",
-  "stress_state": "How stress shows up and what derails them (2-3 sentences)",
-  "management_guide": "How to get the best out of them: communication, autonomy, feedback, motivation (3-4 sentences)",
-  "role_fit_strong": "Specific wine/hospitality roles where they will thrive (3-4 sentences)",
-  "role_fit_avoid": "Specific roles and responsibilities that will drain them (3-4 sentences)",
-  "hiring_verdict": "One of exactly: Strong fit, Conditional fit, Not recommended",
-  "assessment_rationale": "Manager-only one-paragraph rationale for the verdict, noting how decisive the scores are"
-}`;
+const JSON_INSTRUCTION = `Output JSON only, no markdown or backticks:
+{"archetype":"3-4 sentences with a named reference figure","frequency":"3-4 sentences","natural_strengths":"3-4 sentences in wine/hospitality context","blind_spots":"3-4 sentences direct","flow_state":"2-3 sentences","stress_state":"2-3 sentences","management_guide":"3-4 sentences","role_fit_strong":"3-4 wine/hospitality roles","role_fit_avoid":"3-4 roles to avoid","hiring_verdict":"Strong fit OR Conditional fit OR Not recommended","assessment_rationale":"1 paragraph with verdict rationale"}`;
 
 export const handler = async (event) => {
   if (event.httpMethod === 'OPTIONS') {
@@ -104,7 +64,7 @@ ${JSON_INSTRUCTION}`;
         },
         body: JSON.stringify({
           model: 'claude-haiku-4-5-20251001',
-          max_tokens: 1800,
+          max_tokens: 1200,
           system: SYSTEM_PROMPT,
           thinking: { type: 'disabled' },
           messages: [{ role: 'user', content: userPrompt }]
