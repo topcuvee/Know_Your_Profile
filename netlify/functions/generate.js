@@ -31,28 +31,20 @@ Each field should be substantial — roughly 3-4 sentences (2-3 for flow_state a
 const PROFILE_NAMES = ['Creator', 'Star', 'Supporter', 'Accumulator', 'Deal Maker', 'Lord', 'Trader', 'Mechanic'];
 const FREQUENCY_MAP = ['Dynamo', 'Dynamo', 'Blaze', 'Tempo', 'Blaze', 'Steel', 'Tempo', 'Steel'];
 
-const REPORT_SCHEMA = {
-  type: 'object',
-  properties: {
-    archetype: { type: 'string' },
-    frequency: { type: 'string' },
-    natural_strengths: { type: 'string' },
-    blind_spots: { type: 'string' },
-    flow_state: { type: 'string' },
-    stress_state: { type: 'string' },
-    management_guide: { type: 'string' },
-    role_fit_strong: { type: 'string' },
-    role_fit_avoid: { type: 'string' },
-    hiring_verdict: { type: 'string', enum: ['Strong fit', 'Conditional fit', 'Not recommended'] },
-    assessment_rationale: { type: 'string' }
-  },
-  required: [
-    'archetype', 'frequency', 'natural_strengths', 'blind_spots', 'flow_state',
-    'stress_state', 'management_guide', 'role_fit_strong', 'role_fit_avoid',
-    'hiring_verdict', 'assessment_rationale'
-  ],
-  additionalProperties: false
-};
+const JSON_INSTRUCTION = `Return ONLY a single valid JSON object — no markdown, no backticks, no text before or after. Use exactly these keys, each a string value:
+{
+  "archetype": "Who they are: primary archetype with a named real-world reference figure, plus how the secondary profile shapes them (3-4 sentences)",
+  "frequency": "Their natural energy: what the frequency group means in practice, and whether the profile is decisive or scattered (qualitative) (3-4 sentences)",
+  "natural_strengths": "Where they shine, in a wine/hospitality context (3-4 sentences)",
+  "blind_spots": "Where they struggle or create friction — direct and specific (3-4 sentences)",
+  "flow_state": "What puts them in flow (2-3 sentences)",
+  "stress_state": "How stress shows up and what derails them (2-3 sentences)",
+  "management_guide": "How to get the best out of them: communication, autonomy, feedback, motivation (3-4 sentences)",
+  "role_fit_strong": "Specific wine/hospitality roles where they will thrive (3-4 sentences)",
+  "role_fit_avoid": "Specific roles and responsibilities that will drain them (3-4 sentences)",
+  "hiring_verdict": "One of exactly: Strong fit, Conditional fit, Not recommended",
+  "assessment_rationale": "Manager-only one-paragraph rationale for the verdict, noting how decisive the scores are"
+}`;
 
 export const handler = async (event) => {
   if (event.httpMethod === 'OPTIONS') {
@@ -93,7 +85,7 @@ Secondary profile: ${secondaryProfile}
 Frequency group: ${frequencyGroup}
 Score distribution (out of 36, for qualitative judgement only — do not quote numbers): ${distribution}
 
-Fill every field of the report.`;
+${JSON_INSTRUCTION}`;
 
     if (!process.env.ANTHROPIC_API_KEY) throw new Error('ANTHROPIC_API_KEY not set');
 
@@ -101,6 +93,7 @@ Fill every field of the report.`;
     const timeout = setTimeout(() => controller.abort(), 24000);
 
     let report = null;
+    let debugError = null;
     try {
       const claudeRes = await fetch('https://api.anthropic.com/v1/messages', {
         method: 'POST',
@@ -111,13 +104,10 @@ Fill every field of the report.`;
         },
         body: JSON.stringify({
           model: 'claude-sonnet-4-6',
-          max_tokens: 2200,
+          max_tokens: 2500,
           system: SYSTEM_PROMPT,
           thinking: { type: 'disabled' },
-          output_config: {
-            effort: 'low',
-            format: { type: 'json_schema', schema: REPORT_SCHEMA }
-          },
+          output_config: { effort: 'low' },
           messages: [{ role: 'user', content: userPrompt }]
         }),
         signal: controller.signal
@@ -129,11 +119,23 @@ Fill every field of the report.`;
         throw new Error(`Claude API ${claudeRes.status}: ${errText}`);
       }
       const claudeData = await claudeRes.json();
-      const text = claudeData.content.find(b => b.type === 'text')?.text || '';
-      report = JSON.parse(text);
+      let text = (claudeData.content.find(b => b.type === 'text')?.text || '').trim();
+      // Strip markdown fences if present
+      if (text.startsWith('```')) {
+        text = text.replace(/^```(?:json)?\s*/, '').replace(/\s*```$/, '');
+      }
+      try {
+        report = JSON.parse(text);
+      } catch {
+        const s = text.indexOf('{'), e = text.lastIndexOf('}');
+        if (s >= 0 && e > s) report = JSON.parse(text.substring(s, e + 1));
+        else throw new Error('No JSON object in response: ' + text.slice(0, 200));
+      }
+      if (!report.archetype) throw new Error('Parsed JSON missing fields');
       console.log('✅ Claude report generated for', firstName);
     } catch (apiError) {
       clearTimeout(timeout);
+      debugError = apiError.message;
       console.error('❌ Claude generation failed:', apiError.message);
       report = fallbackReport(firstName, primaryProfile, secondaryProfile, frequencyGroup);
     }
@@ -183,7 +185,8 @@ Fill every field of the report.`;
         primary_profile: primaryProfile,
         secondary_profile: secondaryProfile,
         frequency_group: frequencyGroup,
-        report
+        report,
+        _debug: debugError
       })
     };
   } catch (error) {

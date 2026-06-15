@@ -693,6 +693,7 @@
         }
         const data = await res.json();
         console.log('✅ Report received:', data);
+        if (data._debug) console.warn('⚠ Report used FALLBACK. Claude error:', data._debug);
         displayReport(data);
         setTimeout(() => showPage(4), 100);
       } catch (error) {
