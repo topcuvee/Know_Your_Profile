@@ -107,7 +107,6 @@ ${JSON_INSTRUCTION}`;
           max_tokens: 1800,
           system: SYSTEM_PROMPT,
           thinking: { type: 'disabled' },
-          output_config: { effort: 'low' },
           messages: [{ role: 'user', content: userPrompt }]
         }),
         signal: controller.signal
