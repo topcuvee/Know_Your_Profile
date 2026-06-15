@@ -90,7 +90,7 @@ ${JSON_INSTRUCTION}`;
     if (!process.env.ANTHROPIC_API_KEY) throw new Error('ANTHROPIC_API_KEY not set');
 
     const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 24000);
+    const timeout = setTimeout(() => controller.abort(), 50000);
 
     let report = null;
     let debugError = null;
@@ -104,7 +104,7 @@ ${JSON_INSTRUCTION}`;
         },
         body: JSON.stringify({
           model: 'claude-sonnet-4-6',
-          max_tokens: 2500,
+          max_tokens: 2000,
           system: SYSTEM_PROMPT,
           thinking: { type: 'disabled' },
           output_config: { effort: 'low' },
