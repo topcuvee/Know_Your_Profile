@@ -87,7 +87,14 @@ Return exactly this JSON structure with real content:
       }
 
       const claudeData = await claudeResponse.json();
-      const responseText = claudeData.content[0].text.trim();
+      let responseText = claudeData.content[0].text.trim();
+
+      // Strip markdown wrapper if present
+      if (responseText.startsWith('```json')) {
+        responseText = responseText.replace(/^```json\s*/, '').replace(/\s*```$/, '');
+      } else if (responseText.startsWith('```')) {
+        responseText = responseText.replace(/^```\s*/, '').replace(/\s*```$/, '');
+      }
 
       // Parse JSON - try direct parse first, then extract from braces
       try {
