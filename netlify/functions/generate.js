@@ -132,8 +132,6 @@ Return exactly this JSON structure with real content:
     // Send manager email (non-blocking)
     if (process.env.RESEND_API_KEY && process.env.MANAGER_EMAIL) {
       try {
-        const keyPreview = process.env.RESEND_API_KEY.substring(0, 10) + '...';
-        console.log('📧 Using Resend key:', keyPreview, 'for email to:', process.env.MANAGER_EMAIL);
         const emailHtml = `
 <h2>${primaryProfile} Profile Report</h2>
 <p><strong>Candidate:</strong> ${name}</p>
@@ -169,9 +167,7 @@ Return exactly this JSON structure with real content:
             html: emailHtml
           })
         });
-        console.log('📧 Resend response status:', emailResponse.status);
         const emailData = await emailResponse.json();
-        console.log('📧 Resend response body:', JSON.stringify(emailData));
         if (!emailResponse.ok) {
           throw new Error(`Resend API ${emailResponse.status}: ${JSON.stringify(emailData)}`);
         }
