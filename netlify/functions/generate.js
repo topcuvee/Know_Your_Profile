@@ -130,6 +130,11 @@ Return exactly this JSON structure with real content:
     }
 
     // Send manager email (non-blocking)
+    console.log('📬 Checking email config:', {
+      hasResendKey: !!process.env.RESEND_API_KEY,
+      hasManagerEmail: !!process.env.MANAGER_EMAIL,
+      managerEmail: process.env.MANAGER_EMAIL
+    });
     if (process.env.RESEND_API_KEY && process.env.MANAGER_EMAIL) {
       try {
         const emailHtml = `
