@@ -52,15 +52,38 @@ export const handler = async (event) => {
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 20000);
 
-    const claudePrompt = `You MUST return ONLY valid JSON, nothing else. No markdown, no text before or after.
+    const claudePrompt = `You are an expert in the Wealth Dynamics framework. Generate a comprehensive profile report for a ${primaryProfile} with ${frequencyGroup} frequency.
 
-Return exactly this JSON structure with real content:
+Return ONLY valid JSON, nothing else. No markdown, no extra text.
+
+Generate TWO versions:
+1. candidate_report: A concise, encouraging 3-4 sentence profile summary for the person taking the assessment
+2. manager_report: A detailed, professional report with these sections:
+   - profile_summary: 3-4 sentences on the archetype, including a real-world example
+   - frequency_group: 2-3 sentences on what ${frequencyGroup} means in practice
+   - natural_strengths: 3-4 sentences on what they excel at naturally
+   - blind_spots: 2-3 sentences on where they struggle or create friction
+   - flow_state: 2-3 sentences on when they're at their best
+   - stress_state: 2-3 sentences on how stress manifests for them
+   - management_guide: 3-4 sentences on how to get the best from them
+   - role_fit_strong: 2-3 sentence list of roles where they thrive
+   - role_fit_draining: 2-3 sentence list of roles that drain them
+   - hiring_verdict: One sentence: "Strong fit", "Conditional fit", or "Not recommended" with one sentence rationale
+
 {
-  "profile_summary": "3 sentences about ${primaryProfile}",
-  "frequency_summary": "3 sentences about ${frequencyGroup} frequency",
-  "natural_strengths": "3 sentences on ${primaryProfile}'s strengths",
-  "flow_state": "2 sentences on when ${primaryProfile} is in flow",
-  "stress_state": "2 sentences on ${primaryProfile} under stress"
+  "candidate_report": "string",
+  "manager_report": {
+    "profile_summary": "string",
+    "frequency_group": "string",
+    "natural_strengths": "string",
+    "blind_spots": "string",
+    "flow_state": "string",
+    "stress_state": "string",
+    "management_guide": "string",
+    "role_fit_strong": "string",
+    "role_fit_draining": "string",
+    "hiring_verdict": "string"
+  }
 }`;
 
     let report;
@@ -119,39 +142,59 @@ Return exactly this JSON structure with real content:
     }
 
     // Fallback if Claude failed
-    if (!report || !report.profile_summary) {
+    if (!report || !report.candidate_report) {
       report = {
-        profile_summary: `${primaryProfile}s are natural innovators with distinctive strengths in their domain. They bring focus and expertise to their work. Their approach is direct and effective.`,
-        frequency_summary: `${frequencyGroup}s operate with characteristic energy and focus. They bring momentum and commitment to their roles. The gap: flexibility and breadth beyond their specialty.`,
-        natural_strengths: `${primaryProfile}s excel at their core competencies. They bring dedication and expertise. Their focus and reliability are assets to any team.`,
-        flow_state: `${primaryProfile}s thrive when working in their areas of strength. They excel with clear objectives and autonomy.`,
-        stress_state: `Under pressure, ${primaryProfile}s may become overly focused or rigid. They benefit from support and broader perspective.`
+        candidate_report: `You are a ${primaryProfile}—naturally driven to ${primaryProfile.toLowerCase() === 'creator' ? 'innovate and bring new ideas to life' : primaryProfile.toLowerCase() === 'star' ? 'inspire and influence others' : primaryProfile.toLowerCase() === 'supporter' ? 'support and enable others' : primaryProfile.toLowerCase() === 'accumulator' ? 'build and accumulate value' : primaryProfile.toLowerCase() === 'deal maker' ? 'connect and negotiate' : primaryProfile.toLowerCase() === 'trader' ? 'recognize opportunity and timing' : primaryProfile.toLowerCase() === 'lord' ? 'control systems and data' : 'optimize and improve systems'}. Your ${frequencyGroup} frequency means you operate with distinctive energy patterns.`,
+        manager_report: {
+          profile_summary: `${primaryProfile}s bring distinctive strengths to their role. They are naturally driven to contribute in meaningful ways. Their approach is reliable and focused.`,
+          frequency_group: `The ${frequencyGroup} frequency means this person operates with characteristic energy and momentum. They bring commitment to their roles.`,
+          natural_strengths: `${primaryProfile}s excel at their core competencies with dedication and expertise. Their focus and reliability are assets to any team.`,
+          blind_spots: `They may struggle with areas outside their core expertise. Flexibility and adaptability can sometimes be challenging.`,
+          flow_state: `They thrive when working in their areas of strength with clear objectives and autonomy.`,
+          stress_state: `Under pressure, they may become overly focused on their specialty. Support and broader perspective help them regain balance.`,
+          management_guide: `Provide clear direction, recognize their contributions, and give them autonomy in their strengths. Support development in weaker areas.`,
+          role_fit_strong: `Roles leveraging their core strengths and expertise where consistency and focus are valued.`,
+          role_fit_draining: `Roles requiring constant context-switching, high visibility, or work far outside their natural strengths.`,
+          hiring_verdict: `Conditional fit—strong in specialized roles, requires support in broader responsibilities.`
+        }
       };
     }
 
     // Send manager email (non-blocking)
     if (process.env.RESEND_API_KEY && process.env.MANAGER_EMAIL) {
       try {
+        const mgr = report.manager_report;
         const emailHtml = `
-<h2>${primaryProfile} Profile Report</h2>
-<p><strong>Candidate:</strong> ${name}</p>
+<h2>Profile Assessment Report: ${name}</h2>
+<p><strong>Primary Profile:</strong> ${primaryProfile}</p>
 <p><strong>Secondary Profile:</strong> ${secondaryProfile}</p>
 <p><strong>Frequency Group:</strong> ${frequencyGroup}</p>
 
 <h3>Profile Summary</h3>
-<p>${report.profile_summary}</p>
+<p>${mgr.profile_summary}</p>
 
-<h3>Frequency Summary</h3>
-<p>${report.frequency_summary}</p>
+<h3>Frequency Group</h3>
+<p>${mgr.frequency_group}</p>
 
 <h3>Natural Strengths</h3>
-<p>${report.natural_strengths}</p>
+<p>${mgr.natural_strengths}</p>
 
-<h3>Flow State</h3>
-<p>${report.flow_state}</p>
+<h3>Blind Spots</h3>
+<p>${mgr.blind_spots}</p>
 
-<h3>Stress State</h3>
-<p>${report.stress_state}</p>
+<h3>Flow vs Stress</h3>
+<p><strong>In Flow:</strong> ${mgr.flow_state}</p>
+<p><strong>Under Stress:</strong> ${mgr.stress_state}</p>
+
+<h3>Management Guide</h3>
+<p>${mgr.management_guide}</p>
+
+<h3>Role Fit</h3>
+<p><strong>Strong Fit:</strong> ${mgr.role_fit_strong}</p>
+<p><strong>Draining:</strong> ${mgr.role_fit_draining}</p>
+
+<h3>Hiring Verdict</h3>
+<p>${mgr.hiring_verdict}</p>
         `;
 
         const emailResponse = await fetch('https://api.resend.com/emails', {
@@ -183,11 +226,8 @@ Return exactly this JSON structure with real content:
         primary_profile: primaryProfile,
         secondary_profile: secondaryProfile,
         frequency_group: frequencyGroup,
-        profile_summary: report.profile_summary,
-        frequency_summary: report.frequency_summary,
-        natural_strengths: report.natural_strengths,
-        flow_state: report.flow_state,
-        stress_state: report.stress_state
+        candidate_report: report.candidate_report,
+        manager_report: report.manager_report
       })
     };
   } catch (error) {
