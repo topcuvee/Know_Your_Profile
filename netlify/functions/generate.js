@@ -90,7 +90,7 @@ ${JSON_INSTRUCTION}`;
     if (!process.env.ANTHROPIC_API_KEY) throw new Error('ANTHROPIC_API_KEY not set');
 
     const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 50000);
+    const timeout = setTimeout(() => controller.abort(), 9000);
 
     let report = null;
     let debugError = null;
@@ -103,8 +103,8 @@ ${JSON_INSTRUCTION}`;
           'anthropic-version': '2023-06-01'
         },
         body: JSON.stringify({
-          model: 'claude-sonnet-4-6',
-          max_tokens: 2000,
+          model: 'claude-haiku-4-5-20251001',
+          max_tokens: 1800,
           system: SYSTEM_PROMPT,
           thinking: { type: 'disabled' },
           output_config: { effort: 'low' },
