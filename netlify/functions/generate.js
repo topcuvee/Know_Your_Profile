@@ -167,13 +167,15 @@ Return exactly this JSON structure with real content:
             html: emailHtml
           })
         });
+        console.log('📧 Resend response status:', emailResponse.status);
         const emailData = await emailResponse.json();
+        console.log('📧 Resend response body:', JSON.stringify(emailData));
         if (!emailResponse.ok) {
           throw new Error(`Resend API ${emailResponse.status}: ${JSON.stringify(emailData)}`);
         }
-        console.log('📧 Manager email sent:', emailData.id);
+        console.log('✅ Manager email sent:', emailData.id);
       } catch (emailError) {
-        console.error('⚠ Email send failed (non-blocking):', emailError.message);
+        console.error('❌ Email send failed (non-blocking):', emailError.message);
       }
     }
 
