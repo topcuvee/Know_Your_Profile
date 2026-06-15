@@ -129,6 +129,50 @@ Return exactly this JSON structure with real content:
       };
     }
 
+    // Send manager email (non-blocking)
+    if (process.env.RESEND_API_KEY && process.env.MANAGER_EMAIL) {
+      try {
+        const emailHtml = `
+<h2>${primaryProfile} Profile Report</h2>
+<p><strong>Candidate:</strong> ${name}</p>
+<p><strong>Secondary Profile:</strong> ${secondaryProfile}</p>
+<p><strong>Frequency Group:</strong> ${frequencyGroup}</p>
+
+<h3>Profile Summary</h3>
+<p>${report.profile_summary}</p>
+
+<h3>Frequency Summary</h3>
+<p>${report.frequency_summary}</p>
+
+<h3>Natural Strengths</h3>
+<p>${report.natural_strengths}</p>
+
+<h3>Flow State</h3>
+<p>${report.flow_state}</p>
+
+<h3>Stress State</h3>
+<p>${report.stress_state}</p>
+        `;
+
+        await fetch('https://api.resend.com/emails', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${process.env.RESEND_API_KEY}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            from: 'reports@topcuvee.com',
+            to: process.env.MANAGER_EMAIL,
+            subject: `Profile Report: ${name} (${primaryProfile})`,
+            html: emailHtml
+          })
+        });
+        console.log('📧 Manager email sent');
+      } catch (emailError) {
+        console.error('⚠ Email send failed (non-blocking):', emailError.message);
+      }
+    }
+
     return {
       statusCode: 200,
       headers: { 'Access-Control-Allow-Origin': '*', 'Content-Type': 'application/json' },
